@@ -48,54 +48,72 @@ This is not a drop-in production SOC. It is a substantial research implementatio
 
 ## Architecture
 
-```text
-                         Security Events / Network Flow Data
-                                      |
-                                      v
-                +---------------------------------------------+
-                | Detection and Collection                    |
-                | Wazuh SIEM, Suricata, Zeek, Filebeat         |
-                +---------------------+-----------------------+
-                                      |
-                                      v
-                +---------------------------------------------+
-                | Wazuh Integration (:8002)                   |
-                | Webhook receiver, alert routing, enrichment |
-                +-----------+--------------------+------------+
-                            |                    |
-                            v                    v
-      +-----------------------------+   +-----------------------------+
-      | Alert Triage (:8100)        |   | RAG Service (:8300)         |
-      | Local LLM analysis          |   | MITRE, CVE, runbooks        |
-      | ML-aware confidence         |   | ChromaDB vector store       |
-      | Async worker pool           |   +-----------------------------+
-      +-------------+---------------+
-                    |
-                    v
-      +-----------------------------+   +-----------------------------+
-      | ML Inference (:8500)        |   | Feedback Service (:8400)    |
-      | RF, XGBoost, Decision Tree  |   | Alert history, labels       |
-      | 77 CICIDS2017 features      |   | Retraining input            |
-      +-------------+---------------+   +-----------------------------+
-                    |
-                    v
-      +-----------------------------+   +-----------------------------+
-      | Correlation Engine (:8600)  |   | Rule Generator (:8700)      |
-      | Incidents, kill-chain state |   | Sigma draft generation      |
-      | Risk scoring, simulation    |   | Back-testing workflow       |
-      +-------------+---------------+   +-----------------------------+
-                    |
-                    v
-      +---------------------------------------------------------------+
-      | Response Orchestrator (:8800)                                 |
-      | D3FEND countermeasures, approval tiers, adapter execution,     |
-      | verification by re-simulation and monitoring                   |
-      +---------------------------------------------------------------+
+```mermaid
+flowchart TB
+    events["Security Events and Network Flow Data"]
 
-      +---------------------------------------------------------------+
-      | Observability                                                  |
-      | Prometheus, Grafana, Alertmanager, Loki, service metrics       |
-      +---------------------------------------------------------------+
+    subgraph collect["Detection and Collection"]
+        wazuh["Wazuh SIEM"]
+        suricata["Suricata IDS"]
+        zeek["Zeek"]
+        filebeat["Filebeat"]
+    end
+
+    integration["Wazuh Integration :8002<br/>Webhook receiver, alert routing, enrichment"]
+
+    subgraph analysis["AI Analysis Layer"]
+        triage["Alert Triage :8100<br/>Local LLM analysis<br/>ML-aware confidence<br/>Async worker pool"]
+        rag["RAG Service :8300<br/>MITRE, CVE, runbooks<br/>ChromaDB vector store"]
+        ml["ML Inference :8500<br/>Random Forest, XGBoost, Decision Tree<br/>77 CICIDS2017 features"]
+    end
+
+    subgraph memory["Learning and Knowledge"]
+        feedback["Feedback Service :8400<br/>Alert history<br/>Analyst labels<br/>Retraining input"]
+        retraining["Retraining Pipeline<br/>Champion/challenger promotion<br/>Model reload workflow"]
+        rules["Rule Generator :8700<br/>Sigma draft generation<br/>Historical back-testing"]
+    end
+
+    subgraph incidents["Incident Intelligence"]
+        correlation["Correlation Engine :8600<br/>Incident grouping<br/>Kill-chain state<br/>Risk scoring and simulation"]
+        swarm["Attack-Campaign Simulator<br/>Attacker and defender archetypes<br/>Monte Carlo swarm runs"]
+    end
+
+    orchestrator["Response Orchestrator :8800<br/>D3FEND countermeasures<br/>Approval tiers<br/>Adapter execution<br/>Verification by re-simulation and monitoring"]
+
+    subgraph observe["Observability"]
+        prometheus["Prometheus"]
+        grafana["Grafana"]
+        alertmanager["Alertmanager"]
+        loki["Loki"]
+    end
+
+    events --> collect
+    collect --> integration
+    integration --> triage
+    integration --> rag
+    triage <--> rag
+    triage --> ml
+    triage --> feedback
+    ml --> triage
+    feedback --> retraining
+    retraining --> ml
+    triage --> correlation
+    integration --> correlation
+    correlation --> swarm
+    swarm --> correlation
+    correlation --> orchestrator
+    orchestrator --> rules
+    orchestrator --> feedback
+    orchestrator --> swarm
+
+    triage -. metrics .-> prometheus
+    rag -. metrics .-> prometheus
+    ml -. metrics .-> prometheus
+    correlation -. metrics .-> prometheus
+    orchestrator -. metrics .-> prometheus
+    prometheus --> grafana
+    prometheus --> alertmanager
+    integration -. logs .-> loki
 ```
 
 ## Repository Layout
