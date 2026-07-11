@@ -20,7 +20,7 @@ pytest-playwright==0.4.3
 playwright==1.40.0
 
 # Load Testing
-locust==2.19.1
+locust==2.45.0
 
 # Code Quality
 black==23.12.1
