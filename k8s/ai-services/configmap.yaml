@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-soc-config
+  namespace: ai-soc
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "ai_soc"
+  REDIS_URL: "redis://redis:6379/0"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  LITELLM_MODEL: "gpt-4o-mini"
+  WAZUH_API_URL: "http://wazuh:55000"
+  CORRELATION_ENGINE_URL: "http://correlation-engine:8004"
+  ML_INFERENCE_URL: "http://ml-inference:8006"

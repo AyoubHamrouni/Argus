@@ -5,7 +5,7 @@ Service Integration Utilities
 Common utilities for inter-service communication, error handling,
 and resilience patterns.
 
-Author: HOLLOWED_EYES
+Author: AI-SOC Team
 Mission: OPERATION PIPELINE-INTEGRATION
 """
 

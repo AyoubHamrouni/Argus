@@ -8,7 +8,7 @@ Integration: Alert-Triage Service Architecture
 Endpoint: POST /predict
 Target Latency: <100ms per prediction
 
-Author: HOLLOWED_EYES
+Author: AI-SOC Team
 Mission: OPERATION ML-BASELINE
 Date: 2025-10-13
 """
@@ -218,7 +218,7 @@ async def predict(flow: NetworkFlow):
     Predict intrusion detection for a network flow
 
     Args:
-        flow: NetworkFlow object with 78 features and optional model selection
+        flow: NetworkFlow object with 77 features and optional model selection
 
     Returns:
         PredictionResponse with prediction, confidence, and metadata

@@ -12,13 +12,20 @@ intelligence into action.
 
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime
+from pydantic import BaseModel, Field
+from typing import Optional
 from typing import List, Optional
+from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import FastAPI, APIRouter, HTTPException, Query, status, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from services.common.tracing import init_tracing, instrument_app, instrument_httpx
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
 
 from config import get_settings
 from database import create_db_pool, close_db_pool, check_db_health
@@ -91,6 +98,11 @@ async def lifespan(app: FastAPI):
         "Starting %s v%s", settings.service_name, settings.service_version
     )
 
+    # Initialize OpenTelemetry tracing
+    init_tracing("response-orchestrator")
+    instrument_app(app, "response-orchestrator")
+    instrument_httpx()
+
     await create_db_pool(settings.database_url)
     orchestrator = ResponseOrchestrator(settings)
 
@@ -100,11 +112,32 @@ async def lifespan(app: FastAPI):
         settings.auto_execute_confidence_min,
     )
 
+    # Initialize Redis cache
+    import os
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
 
+    await close_redis()
     await close_db_pool()
     logger.info("Response Orchestrator shut down")
 
+
+# Security
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Enforce strict API key authentication if enabled."""
+    if not settings.api_key_enabled:
+        return True
+    if not credentials or credentials.credentials != settings.api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
 
 # ---------------------------------------------------------------------------
 # FastAPI App
@@ -120,7 +153,24 @@ app = FastAPI(
     ),
     version=settings.service_version,
     lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)]
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(RateLimitMiddleware)
+
+# OpenTelemetry Instrumentation
+FastAPIInstrumentor.instrument_app(app)
+
+router = APIRouter(prefix="/api/v1/response", tags=["v1"])
+app.include_router(router)
 
 
 # ---------------------------------------------------------------------------
@@ -209,7 +259,7 @@ async def health_check():
 # Defense Plan Endpoints
 # ---------------------------------------------------------------------------
 
-@app.post(
+@router.post(
     "/defend",
     response_model=DefensePlan,
     tags=["Defense"],
@@ -258,7 +308,7 @@ async def trigger_defense(request: TriggerPlanRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get(
+@router.get(
     "/plans",
     response_model=List[PlanSummary],
     tags=["Defense"],
@@ -293,7 +343,7 @@ async def list_plans(
     ]
 
 
-@app.get(
+@router.get(
     "/plans/{plan_id}",
     response_model=DefensePlan,
     tags=["Defense"],
@@ -314,7 +364,7 @@ async def get_plan(plan_id: str):
 # Approval Endpoints
 # ---------------------------------------------------------------------------
 
-@app.get(
+@router.get(
     "/approvals",
     tags=["Approval"],
     summary="List all pending approval requests",
@@ -331,22 +381,19 @@ async def list_pending_approvals():
     return orchestrator.get_pending_approvals()
 
 
-@app.post(
+@router.post(
     "/plans/{plan_id}/actions/{action_id}/approve",
     response_model=PlannedAction,
     tags=["Approval"],
-    summary="Approve or reject a pending defense action",
+    summary="Approve or reject a pending defense action (Legacy)",
 )
-async def approve_action(
+async def approve_action_legacy(
     plan_id: str,
     action_id: str,
     request: ApproveActionRequest,
 ):
     """
     Approve or reject a defense action that requires human authorization.
-
-    If approved, the action is immediately executed via its adapter.
-    If rejected, the action is marked as vetoed and skipped.
     """
     if not orchestrator:
         raise HTTPException(status_code=503, detail="Orchestrator not initialized")
@@ -356,7 +403,43 @@ async def approve_action(
             plan_id=plan_id,
             action_id=action_id,
             approved=request.approved,
-            analyst_id=request.analyst_id,
+            notes=request.notes,
+        )
+        return action
+    except Exception as e:
+        logger.error(f"Error approving action: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class TriageApproveRequest(BaseModel):
+    plan_id: str
+    action_id: str
+    approved: bool
+    notes: Optional[str] = None
+
+
+@app.post(
+    "/api/v1/triage/approve",
+    response_model=PlannedAction,
+    tags=["Approval"],
+    summary="Approve or reject a pending defense action",
+)
+async def approve_action(
+    request: TriageApproveRequest,
+):
+    """
+    Approve or reject a defense action that requires human authorization.
+    If approved, the action is immediately executed via its adapter.
+    If rejected, the action is marked as vetoed and skipped.
+    """
+    if not orchestrator:
+        raise HTTPException(status_code=503, detail="Orchestrator not initialized")
+
+    try:
+        action = await orchestrator.approve_action(
+            plan_id=request.plan_id,
+            action_id=request.action_id,
+            approved=request.approved,
             notes=request.notes,
         )
         return action
@@ -369,7 +452,7 @@ async def approve_action(
 # D3FEND Reference Endpoints
 # ---------------------------------------------------------------------------
 
-@app.get(
+@router.get(
     "/d3fend/lookup/{technique_id}",
     tags=["D3FEND"],
     summary="Look up D3FEND countermeasures for an ATT&CK technique",
@@ -407,7 +490,7 @@ async def d3fend_lookup(technique_id: str):
     }
 
 
-@app.get(
+@router.get(
     "/d3fend/techniques",
     tags=["D3FEND"],
     summary="List all supported ATT&CK techniques with D3FEND mappings",

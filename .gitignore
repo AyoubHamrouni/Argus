@@ -87,7 +87,9 @@ datasets/**/*.zip
 models/*.bin
 models/*.safetensors
 models/*.gguf
+models/*.pkl
 !models/README.md
+!models/download_models.sh
 
 # Logs
 logs/

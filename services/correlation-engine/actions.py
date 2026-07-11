@@ -131,7 +131,8 @@ def _build_port_scan() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during port_scan: %s", target_ip, e)
             return ActionOutcome(
                 action_id="port_scan",
                 result=ActionResult.FAILURE,
@@ -232,7 +233,8 @@ def _build_exploit_public_service() -> dict:
                 for svc in host.services:
                     if svc.cves:
                         return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Host %s not found during exploit_public_service prerequisite check", ip)
                 continue
         return False
 
@@ -242,7 +244,8 @@ def _build_exploit_public_service() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during exploit_public_service: %s", target_ip, e)
             return ActionOutcome(
                 action_id="exploit_public_service",
                 result=ActionResult.FAILURE,
@@ -332,7 +335,8 @@ def _build_brute_force_creds() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during brute_force_creds: %s", target_ip, e)
             return ActionOutcome(
                 action_id="brute_force_creds",
                 result=ActionResult.FAILURE,
@@ -398,7 +402,8 @@ def _build_phishing() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during phishing: %s", target_ip, e)
             return ActionOutcome(
                 action_id="phishing",
                 result=ActionResult.FAILURE,
@@ -467,7 +472,8 @@ def _build_exploit_weak_password() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during exploit_weak_password: %s", target_ip, e)
             return ActionOutcome(
                 action_id="exploit_weak_password",
                 result=ActionResult.FAILURE,
@@ -571,7 +577,8 @@ def _build_deploy_payload() -> dict:
                 host = env.get_host(ip)
                 if not host.defenses.edr_present or ip in agent_state.edr_bypassed:
                     return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Host %s not found during deploy_payload prerequisite check", ip)
                 continue
         return False
 
@@ -592,7 +599,8 @@ def _build_deploy_payload() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during deploy_payload: %s", target_ip, e)
             return ActionOutcome(
                 action_id="deploy_payload",
                 result=ActionResult.FAILURE,
@@ -661,8 +669,8 @@ def _build_install_backdoor() -> dict:
         try:
             host = env.get_host(target_ip)
             host.persistence_installed = True
-        except Exception:
-            pass
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found when setting backdoor persistence: %s", target_ip, e)
 
         agent_state.persistence_hosts.add(target_ip)
         result = ActionResult.DETECTED if detected else ActionResult.SUCCESS
@@ -711,8 +719,8 @@ def _build_create_scheduled_task() -> dict:
         try:
             host = env.get_host(target_ip)
             host.persistence_installed = True
-        except Exception:
-            pass
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found when setting scheduled task persistence: %s", target_ip, e)
 
         agent_state.persistence_hosts.add(target_ip)
         result = ActionResult.DETECTED if detected else ActionResult.SUCCESS
@@ -747,7 +755,8 @@ def _build_exploit_local_vuln() -> dict:
                 for svc in host.services:
                     if svc.cves:
                         return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Host %s not found during exploit_local_vuln prerequisite check", ip)
                 continue
         return False
 
@@ -768,7 +777,8 @@ def _build_exploit_local_vuln() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during exploit_local_vuln: %s", target_ip, e)
             return ActionOutcome(
                 action_id="exploit_local_vuln",
                 result=ActionResult.FAILURE,
@@ -858,7 +868,8 @@ def _build_credential_dump() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during credential_dump: %s", target_ip, e)
             return ActionOutcome(
                 action_id="credential_dump",
                 result=ActionResult.FAILURE,
@@ -917,7 +928,8 @@ def _build_bypass_edr() -> dict:
                 host = env.get_host(ip)
                 if host.defenses.edr_present and ip not in agent_state.edr_bypassed:
                     return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Host %s not found during bypass_edr prerequisite check", ip)
                 continue
         return False
 
@@ -938,7 +950,8 @@ def _build_bypass_edr() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during bypass_edr: %s", target_ip, e)
             return ActionOutcome(
                 action_id="bypass_edr",
                 result=ActionResult.FAILURE,
@@ -1053,7 +1066,8 @@ def _build_pivot_to_host() -> dict:
                 for h in reachable:
                     if h.ip not in agent_state.compromised_hosts:
                         return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Reachable hosts lookup failed for %s during pivot_to_host prerequisite check", src_ip)
                 continue
         return False
 
@@ -1084,7 +1098,8 @@ def _build_pivot_to_host() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during pivot_to_host: %s", target_ip, e)
             return ActionOutcome(
                 action_id="pivot_to_host",
                 result=ActionResult.FAILURE,
@@ -1150,7 +1165,8 @@ def _build_pass_the_hash() -> dict:
                 for h in reachable:
                     if h.ip not in agent_state.compromised_hosts:
                         return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Reachable hosts lookup failed for %s during pass_the_hash prerequisite check", src_ip)
                 continue
         return False
 
@@ -1192,7 +1208,8 @@ def _build_pass_the_hash() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during pass_the_hash: %s", target_ip, e)
             return ActionOutcome(
                 action_id="pass_the_hash",
                 result=ActionResult.FAILURE,
@@ -1257,7 +1274,8 @@ def _build_exfil_data() -> dict:
                 host = env.get_host(ip)
                 if host.criticality not in ("low", "minimal"):
                     return True
-            except Exception:
+            except (KeyError, AttributeError):
+                logger.debug("Host %s not found during exfil_data prerequisite check", ip)
                 continue
         return False
 
@@ -1278,7 +1296,8 @@ def _build_exfil_data() -> dict:
 
         try:
             host = env.get_host(target_ip)
-        except Exception:
+        except (KeyError, AttributeError) as e:
+            logger.debug("Host %s not found in environment during exfil_data: %s", target_ip, e)
             return ActionOutcome(
                 action_id="exfil_data",
                 result=ActionResult.FAILURE,

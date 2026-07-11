@@ -478,4 +478,3 @@ The dataset is provided for academic and research purposes. Please respect the o
 ---
 
 **Dataset prepared for the AI-SOC Project**
-**California State University, San Bernardino**

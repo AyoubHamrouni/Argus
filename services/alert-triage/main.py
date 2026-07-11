@@ -8,12 +8,14 @@ Receives alerts from Shuffle/Wazuh and returns structured analysis.
 
 import asyncio
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends, status, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
@@ -22,6 +24,30 @@ from config import settings
 from models import SecurityAlert, TriageResponse, HealthResponse
 from llm_client import OllamaClient
 from worker_pool import WorkerPool
+from pii_redaction import redact_alert_pii
+from common.security import detect_prompt_injection
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
+
+import re
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from services.common.tracing import init_tracing, instrument_app, instrument_httpx
+
+# Security
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    api_key_enabled = os.getenv("TRIAGE_API_KEY_ENABLED", "true").lower() == "true"
+    if not api_key_enabled:
+        return True
+    api_key = os.getenv("TRIAGE_API_KEY", "")
+    if not credentials or credentials.credentials != api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
 
 # Configure logging
 logging.basicConfig(
@@ -63,6 +89,11 @@ async def lifespan(app: FastAPI):
     logger.info(f"Ollama host: {settings.ollama_host}")
     logger.info(f"Primary model: {settings.primary_model}")
 
+    # Initialize OpenTelemetry tracing
+    init_tracing("alert-triage")
+    instrument_app(app, "alert-triage")
+    instrument_httpx()
+
     # Initialize LLM client
     llm_client = OllamaClient()
 
@@ -87,10 +118,15 @@ async def lifespan(app: FastAPI):
     app.state.worker_pool = worker_pool
     logger.info(f"Worker pool started: {settings.worker_count} workers")
 
+    # Initialize Redis cache
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
 
     # Shutdown
     logger.info("Shutting down Alert Triage Service")
+    await close_redis()
     await worker_pool.stop()
 
 
@@ -99,8 +135,25 @@ app = FastAPI(
     title="Alert Triage Service",
     description="LLM-powered security alert analysis for SOC automation",
     version=settings.service_version,
-    lifespan=lifespan
+    lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)]
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(RateLimitMiddleware)
+
+# OpenTelemetry Instrumentation
+FastAPIInstrumentor.instrument_app(app)
+
+router = APIRouter(prefix="/api/v1/triage", tags=["v1"])
+app.include_router(router)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -138,65 +191,47 @@ async def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-@app.post("/analyze", response_model=TriageResponse)
+@router.post("/analyze", status_code=status.HTTP_202_ACCEPTED)
 async def analyze_alert(alert: SecurityAlert):
     """
-    Analyze security alert using LLM.
-
-    **Workflow:**
-    1. Receive alert from Shuffle webhook
-    2. Query Ollama (Foundation-Sec-8B or fallback)
-    3. Parse structured response
-    4. Return severity, IOCs, and recommendations
-
-    **Args:**
-        alert: SecurityAlert object from Wazuh
-
-    **Returns:**
-        TriageResponse: Structured analysis result
-
-    **Raises:**
-        HTTPException: If analysis fails
+    Submit alert for async triage using the high-throughput worker pool.
+    Instantly returns a 202 Accepted status and a job_id.
     """
-    start_time = time.time()
-
     try:
-        logger.info(f"Received alert: {alert.alert_id}")
+        logger.info(f"Received alert for async triage: {alert.alert_id}")
 
-        # Perform LLM analysis
-        result = await llm_client.analyze_alert(alert)
-
-        if result is None:
-            REQUEST_COUNT.labels(status="failed").inc()
+        # Guardrails: Detect prompt injection
+        is_injection, attack_type = detect_prompt_injection(alert.rule_description)
+        is_injection2, attack_type2 = detect_prompt_injection(alert.raw_log)
+        if is_injection or is_injection2:
+            logger.warning(f"Prompt injection detected in alert {alert.alert_id}")
+            REQUEST_COUNT.labels(status="rejected").inc()
             raise HTTPException(
-                status_code=503,
-                detail="LLM analysis failed - all models unavailable"
+                status_code=400,
+                detail="Invalid input: Prompt injection pattern detected in alert data"
             )
 
-        # Record metrics
-        duration = time.time() - start_time
-        result.processing_time_ms = int(duration * 1000)
+        # Sanitize PII
+        alert_dict = alert.model_dump(mode="json")
+        sanitized_alert_dict = redact_alert_pii(alert_dict)
 
-        REQUEST_COUNT.labels(status="success").inc()
-        REQUEST_DURATION.observe(duration)
-        ANALYSIS_CONFIDENCE.observe(result.confidence)
-
-        logger.info(
-            f"Alert {alert.alert_id} analyzed: "
-            f"severity={result.severity}, confidence={result.confidence:.2f}"
-        )
-
-        # Persist alert + result to feedback service (fire-and-forget)
-        if settings.feedback_enabled:
-            asyncio.create_task(_persist_alert(alert, result))
-
-        return result
+        # Submit to worker pool
+        pool = app.state.worker_pool
+        job_id = pool.submit(sanitized_alert_dict)
+        
+        REQUEST_COUNT.labels(status="queued").inc()
+        
+        return {
+            "job_id": job_id,
+            "status": "queued",
+            "message": f"Alert {alert.alert_id} queued for async analysis"
+        }
 
     except HTTPException:
         raise
     except Exception as e:
         REQUEST_COUNT.labels(status="error").inc()
-        logger.error(f"Unexpected error analyzing alert {alert.alert_id}: {e}")
+        logger.error(f"Unexpected error queuing alert {alert.alert_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -219,6 +254,7 @@ async def _persist_alert(alert: SecurityAlert, result: TriageResponse):
             "ai_is_true_positive": result.is_true_positive,
             "ml_prediction": result.ml_prediction,
             "ml_confidence": result.ml_confidence,
+            "organization_id": alert.organization_id,
         }
         async with httpx.AsyncClient(timeout=10.0) as client:
             await client.post(f"{settings.feedback_service_url}/alerts", json=payload)
@@ -227,7 +263,7 @@ async def _persist_alert(alert: SecurityAlert, result: TriageResponse):
         logger.warning(f"Failed to persist alert {alert.alert_id}: {e}")
 
 
-@app.post("/batch", response_model=Dict[str, Any])
+@router.post("/batch", response_model=Dict[str, Any])
 async def batch_analyze(alerts: list[SecurityAlert]):
     """
     Batch analyze multiple alerts concurrently.
@@ -299,18 +335,23 @@ async def batch_analyze(alerts: list[SecurityAlert]):
     }
 
 
-@app.post("/analyze/async")
+@router.post("/analyze/async")
 async def analyze_async(alert: SecurityAlert, callback_url: str = None):
     """
-    Submit alert for async triage. Returns job_id immediately.
-
-    High-severity alerts are processed first. When queue is deep,
-    low-severity alerts get ML-only results (circuit breaker).
-
-    Poll GET /jobs/{job_id} for results.
+    Submit alert for async triage (Legacy endpoint mapping to /analyze logic).
     """
+    # Guardrails: Detect prompt injection
+    is_injection, attack_type = detect_prompt_injection(alert.rule_description)
+    is_injection2, attack_type2 = detect_prompt_injection(alert.raw_log)
+    if is_injection or is_injection2:
+        raise HTTPException(status_code=400, detail="Invalid input: Prompt injection pattern detected")
+        
+    # Sanitize PII
+    alert_dict = alert.model_dump(mode="json")
+    sanitized_alert_dict = redact_alert_pii(alert_dict)
+
     pool = app.state.worker_pool
-    job_id = pool.submit(alert.model_dump(mode="json"), callback_url=callback_url)
+    job_id = pool.submit(sanitized_alert_dict, callback_url=callback_url)
     return {
         "job_id": job_id,
         "status": "queued",
@@ -319,7 +360,7 @@ async def analyze_async(alert: SecurityAlert, callback_url: str = None):
     }
 
 
-@app.get("/jobs/{job_id}")
+@router.get("/jobs/{job_id}")
 async def get_job(job_id: str):
     """
     Get the status and result of an async triage job.
@@ -344,7 +385,7 @@ async def get_job(job_id: str):
     }
 
 
-@app.get("/workers/stats")
+@router.get("/workers/stats")
 async def worker_stats():
     """Get worker pool statistics."""
     pool = app.state.worker_pool

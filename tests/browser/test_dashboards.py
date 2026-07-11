@@ -15,6 +15,7 @@ Usage:
     pytest tests/browser/test_dashboards.py --browser firefox
 """
 
+import os
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -37,10 +38,13 @@ WAZUH_PASS = "SecurePass123!"
 # ============================================================================
 
 @pytest.mark.browser
-@pytest.mark.skip(reason="Wazuh not yet deployed")
 class TestWazuhDashboard:
     """Test Wazuh Dashboard functionality"""
 
+    @pytest.mark.skipif(
+        not os.getenv("WAZUH_URL"),
+        reason="Set WAZUH_URL to run Wazuh dashboard tests"
+    )
     def test_wazuh_login(self, page: Page):
         """Test Wazuh dashboard login"""
         page.goto(WAZUH_URL, wait_until="networkidle")
@@ -54,6 +58,10 @@ class TestWazuhDashboard:
         expect(page).to_have_title("Wazuh")
         print("\n✅ Wazuh login successful")
 
+    @pytest.mark.skipif(
+        not os.getenv("WAZUH_URL"),
+        reason="Set WAZUH_URL to run Wazuh dashboard tests"
+    )
     def test_wazuh_alerts_page(self, page: Page):
         """Test Wazuh alerts page loads"""
         page.goto(f"{WAZUH_URL}/app/wazuh#/overview", wait_until="networkidle")
@@ -64,6 +72,10 @@ class TestWazuhDashboard:
 
         print("\n📊 Wazuh alerts page loaded")
 
+    @pytest.mark.skipif(
+        not os.getenv("WAZUH_URL"),
+        reason="Set WAZUH_URL to run Wazuh dashboard tests"
+    )
     def test_wazuh_search_functionality(self, page: Page):
         """Test Wazuh search functionality"""
         page.goto(f"{WAZUH_URL}/app/wazuh#/discover", wait_until="networkidle")
@@ -77,6 +89,10 @@ class TestWazuhDashboard:
         page.wait_for_selector(".euiTableRow", timeout=5000)
         print("\n🔍 Wazuh search working")
 
+    @pytest.mark.skipif(
+        not os.getenv("WAZUH_URL"),
+        reason="Set WAZUH_URL to run Wazuh dashboard tests"
+    )
     def test_wazuh_agent_status(self, page: Page):
         """Test Wazuh agents page"""
         page.goto(f"{WAZUH_URL}/app/wazuh#/agents-preview", wait_until="networkidle")
@@ -85,6 +101,10 @@ class TestWazuhDashboard:
         expect(page.locator("text=Agents")).to_be_visible()
         print("\n👥 Wazuh agents page loaded")
 
+    @pytest.mark.skipif(
+        not os.getenv("WAZUH_URL"),
+        reason="Set WAZUH_URL to run Wazuh dashboard tests"
+    )
     def test_wazuh_screenshot(self, page: Page):
         """Capture screenshot of Wazuh dashboard"""
         page.goto(f"{WAZUH_URL}/app/wazuh#/overview", wait_until="networkidle")
@@ -99,10 +119,13 @@ class TestWazuhDashboard:
 # ============================================================================
 
 @pytest.mark.browser
-@pytest.mark.skip(reason="Grafana not yet deployed")
 class TestGrafanaDashboard:
     """Test Grafana monitoring dashboards"""
 
+    @pytest.mark.skipif(
+        not os.getenv("GRAFANA_URL"),
+        reason="Set GRAFANA_URL to run Grafana dashboard tests"
+    )
     def test_grafana_login(self, page: Page):
         """Test Grafana login"""
         page.goto(GRAFANA_URL, wait_until="networkidle")
@@ -119,6 +142,10 @@ class TestGrafanaDashboard:
         expect(page).to_have_url(f"{GRAFANA_URL}/")
         print("\n✅ Grafana login successful")
 
+    @pytest.mark.skipif(
+        not os.getenv("GRAFANA_URL"),
+        reason="Set GRAFANA_URL to run Grafana dashboard tests"
+    )
     def test_grafana_dashboard_loads(self, page: Page):
         """Test Grafana dashboard loads"""
         page.goto(f"{GRAFANA_URL}/dashboards", wait_until="networkidle")
@@ -127,6 +154,10 @@ class TestGrafanaDashboard:
         expect(page.locator("text=Dashboards")).to_be_visible()
         print("\n📊 Grafana dashboards page loaded")
 
+    @pytest.mark.skipif(
+        not os.getenv("GRAFANA_URL"),
+        reason="Set GRAFANA_URL to run Grafana dashboard tests"
+    )
     def test_grafana_metrics(self, page: Page):
         """Test Grafana displays metrics"""
         # Navigate to AI-SOC dashboard (when created)
@@ -139,6 +170,10 @@ class TestGrafanaDashboard:
         assert panels > 0, "No panels visible"
         print(f"\n📈 Grafana dashboard has {panels} panels")
 
+    @pytest.mark.skipif(
+        not os.getenv("GRAFANA_URL"),
+        reason="Set GRAFANA_URL to run Grafana dashboard tests"
+    )
     def test_grafana_alerting(self, page: Page):
         """Test Grafana alerting rules"""
         page.goto(f"{GRAFANA_URL}/alerting/list", wait_until="networkidle")
@@ -147,6 +182,10 @@ class TestGrafanaDashboard:
         expect(page.locator("text=Alert rules")).to_be_visible()
         print("\n🚨 Grafana alerting configured")
 
+    @pytest.mark.skipif(
+        not os.getenv("GRAFANA_URL"),
+        reason="Set GRAFANA_URL to run Grafana dashboard tests"
+    )
     def test_grafana_screenshot(self, page: Page):
         """Capture screenshot of Grafana dashboard"""
         page.goto(f"{GRAFANA_URL}/d/ai-soc-overview", wait_until="networkidle")
@@ -160,10 +199,13 @@ class TestGrafanaDashboard:
 # ============================================================================
 
 @pytest.mark.browser
-@pytest.mark.skip(reason="TheHive not yet deployed")
 class TestTheHiveDashboard:
     """Test TheHive case management UI"""
 
+    @pytest.mark.skipif(
+        not os.getenv("THEHIVE_URL"),
+        reason="Set THEHIVE_URL to run TheHive dashboard tests"
+    )
     def test_thehive_login(self, page: Page):
         """Test TheHive login"""
         page.goto(THEHIVE_URL, wait_until="networkidle")
@@ -175,6 +217,10 @@ class TestTheHiveDashboard:
         expect(page).to_have_title("TheHive")
         print("\n✅ TheHive login successful")
 
+    @pytest.mark.skipif(
+        not os.getenv("THEHIVE_URL"),
+        reason="Set THEHIVE_URL to run TheHive dashboard tests"
+    )
     def test_thehive_cases_list(self, page: Page):
         """Test TheHive cases list"""
         page.goto(f"{THEHIVE_URL}/cases", wait_until="networkidle")
@@ -183,6 +229,10 @@ class TestTheHiveDashboard:
         expect(page.locator("text=Cases")).to_be_visible()
         print("\n📋 TheHive cases list loaded")
 
+    @pytest.mark.skipif(
+        not os.getenv("THEHIVE_URL"),
+        reason="Set THEHIVE_URL to run TheHive dashboard tests"
+    )
     def test_thehive_create_case(self, page: Page):
         """Test creating a case in TheHive"""
         page.goto(f"{THEHIVE_URL}/cases", wait_until="networkidle")
@@ -200,6 +250,10 @@ class TestTheHiveDashboard:
         expect(page.locator("text=Test Security Incident")).to_be_visible()
         print("\n✅ TheHive case created")
 
+    @pytest.mark.skipif(
+        not os.getenv("THEHIVE_URL"),
+        reason="Set THEHIVE_URL to run TheHive dashboard tests"
+    )
     def test_thehive_observables(self, page: Page):
         """Test adding observables to a case"""
         # Navigate to a case
@@ -215,6 +269,10 @@ class TestTheHiveDashboard:
         expect(page.locator("text=192.168.1.100")).to_be_visible()
         print("\n🔍 TheHive observable added")
 
+    @pytest.mark.skipif(
+        not os.getenv("THEHIVE_URL"),
+        reason="Set THEHIVE_URL to run TheHive dashboard tests"
+    )
     def test_thehive_screenshot(self, page: Page):
         """Capture screenshot of TheHive dashboard"""
         page.goto(f"{THEHIVE_URL}/cases", wait_until="networkidle")
@@ -231,49 +289,49 @@ class TestTheHiveDashboard:
 class TestAPIDocs:
     """Test FastAPI documentation pages"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run API docs tests"
+    )
     def test_alert_triage_docs(self, page: Page):
         """Test Alert Triage API docs load"""
-        try:
-            page.goto("http://localhost:8100/docs", wait_until="networkidle", timeout=5000)
+        page.goto("http://localhost:8100/docs", wait_until="networkidle", timeout=5000)
 
-            # Check for Swagger UI
-            expect(page.locator("text=Alert Triage Service")).to_be_visible(timeout=5000)
-            expect(page.locator("text=/analyze")).to_be_visible()
+        # Check for Swagger UI
+        expect(page.locator("text=Alert Triage Service")).to_be_visible(timeout=5000)
+        expect(page.locator("text=/analyze")).to_be_visible()
 
-            # Take screenshot
-            page.screenshot(path="tests/browser/screenshots/alert-triage-docs.png", full_page=True)
-            print("\n📖 Alert Triage docs loaded")
+        # Take screenshot
+        page.screenshot(path="tests/browser/screenshots/alert-triage-docs.png", full_page=True)
+        print("\n📖 Alert Triage docs loaded")
 
-        except Exception as e:
-            pytest.skip(f"Alert Triage service not running: {e}")
-
+    @pytest.mark.skipif(
+        not os.getenv("ML_INFERENCE_URL"),
+        reason="Set ML_INFERENCE_URL to run API docs tests"
+    )
     def test_ml_inference_docs(self, page: Page):
         """Test ML Inference API docs load"""
-        try:
-            page.goto("http://localhost:8500/docs", wait_until="networkidle", timeout=5000)
+        page.goto("http://localhost:8500/docs", wait_until="networkidle", timeout=5000)
 
-            expect(page.locator("text=CICIDS2017")).to_be_visible(timeout=5000)
-            expect(page.locator("text=/predict")).to_be_visible()
+        expect(page.locator("text=CICIDS2017")).to_be_visible(timeout=5000)
+        expect(page.locator("text=/predict")).to_be_visible()
 
-            page.screenshot(path="tests/browser/screenshots/ml-inference-docs.png", full_page=True)
-            print("\n📖 ML Inference docs loaded")
+        page.screenshot(path="tests/browser/screenshots/ml-inference-docs.png", full_page=True)
+        print("\n📖 ML Inference docs loaded")
 
-        except Exception as e:
-            pytest.skip(f"ML Inference service not running: {e}")
-
+    @pytest.mark.skipif(
+        not os.getenv("RAG_SERVICE_URL"),
+        reason="Set RAG_SERVICE_URL to run API docs tests"
+    )
     def test_rag_service_docs(self, page: Page):
         """Test RAG Service API docs load"""
-        try:
-            page.goto("http://localhost:8300/docs", wait_until="networkidle", timeout=5000)
+        page.goto("http://localhost:8300/docs", wait_until="networkidle", timeout=5000)
 
-            expect(page.locator("text=RAG Service")).to_be_visible(timeout=5000)
-            expect(page.locator("text=/retrieve")).to_be_visible()
+        expect(page.locator("text=RAG Service")).to_be_visible(timeout=5000)
+        expect(page.locator("text=/retrieve")).to_be_visible()
 
-            page.screenshot(path="tests/browser/screenshots/rag-service-docs.png", full_page=True)
-            print("\n📖 RAG Service docs loaded")
-
-        except Exception as e:
-            pytest.skip(f"RAG service not running: {e}")
+        page.screenshot(path="tests/browser/screenshots/rag-service-docs.png", full_page=True)
+        print("\n📖 RAG Service docs loaded")
 
 
 # ============================================================================
@@ -298,6 +356,10 @@ class TestVisualRegression:
 class TestResponsiveDesign:
     """Test responsive design across devices"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run responsive design tests"
+    )
     @pytest.mark.parametrize("viewport", [
         {"width": 1920, "height": 1080},  # Desktop
         {"width": 1366, "height": 768},   # Laptop
@@ -308,21 +370,17 @@ class TestResponsiveDesign:
         """Test layout at different viewport sizes"""
         page.set_viewport_size(viewport)
 
-        try:
-            page.goto("http://localhost:8100/docs", wait_until="networkidle", timeout=5000)
+        page.goto("http://localhost:8100/docs", wait_until="networkidle", timeout=5000)
 
-            # Check if page is responsive
-            is_responsive = page.locator("body").is_visible()
-            assert is_responsive
+        # Check if page is responsive
+        is_responsive = page.locator("body").is_visible()
+        assert is_responsive
 
-            # Take screenshot
-            screenshot_name = f"tests/browser/screenshots/responsive-{viewport['width']}x{viewport['height']}.png"
-            page.screenshot(path=screenshot_name)
+        # Take screenshot
+        screenshot_name = f"tests/browser/screenshots/responsive-{viewport['width']}x{viewport['height']}.png"
+        page.screenshot(path=screenshot_name)
 
-            print(f"\n📱 Responsive test: {viewport['width']}x{viewport['height']} - OK")
-
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        print(f"\n📱 Responsive test: {viewport['width']}x{viewport['height']} - OK")
 
 
 # ============================================================================
@@ -333,23 +391,23 @@ class TestResponsiveDesign:
 class TestAccessibility:
     """Test accessibility compliance"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run accessibility tests"
+    )
     def test_keyboard_navigation(self, page: Page):
         """Test keyboard navigation"""
-        try:
-            page.goto("http://localhost:8100/docs", wait_until="networkidle", timeout=5000)
+        page.goto("http://localhost:8100/docs", wait_until="networkidle", timeout=5000)
 
-            # Tab through elements
-            for _ in range(5):
-                page.keyboard.press("Tab")
+        # Tab through elements
+        for _ in range(5):
+            page.keyboard.press("Tab")
 
-            # Check if focused element is visible
-            focused = page.evaluate("document.activeElement.tagName")
-            assert focused is not None
+        # Check if focused element is visible
+        focused = page.evaluate("document.activeElement.tagName")
+        assert focused is not None
 
-            print("\n⌨️  Keyboard navigation working")
-
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        print("\n⌨️  Keyboard navigation working")
 
     def test_aria_labels(self, page: Page):
         """Test ARIA labels are present"""

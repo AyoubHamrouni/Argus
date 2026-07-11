@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rule-generator
+  namespace: ai-soc
+  labels:
+    app: rule-generator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rule-generator
+  template:
+    metadata:
+      labels:
+        app: rule-generator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: rule-generator
+        image: rule-generator:latest
+        ports:
+        - containerPort: 8008
+        envFrom:
+        - configMapRef:
+            name: ai-soc-config
+        - secretRef:
+            name: ai-soc-secrets
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 0.5
+          requests:
+            memory: 256Mi
+            cpu: 0.25
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rule-generator
+  namespace: ai-soc
+spec:
+  selector:
+    app: rule-generator
+  ports:
+  - port: 8008
+    targetPort: 8008
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rule-generator
+  namespace: ai-soc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rule-generator
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

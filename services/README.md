@@ -2,7 +2,7 @@
 
 **AI-Augmented SOC - LLM-Powered Security Operations**
 
-> Intelligent automation for alert triage, log summarization, and threat analysis using state-of-the-art large language models.
+> Intelligent automation for alert triage, threat analysis, incident correlation, and autonomous response using state-of-the-art large language models and ML classifiers.
 
 ---
 
@@ -13,9 +13,9 @@ This directory contains the core AI services that power the AI-Augmented SOC pla
 **Architecture Principles:**
 - **Microservices:** Each service has a single responsibility
 - **API-First:** All services expose FastAPI REST endpoints
-- **Observability:** Prometheus metrics, structured logging
-- **Security:** Input validation, prompt injection protection
-- **Resilience:** Automatic retries, fallback models
+- **Observability:** Prometheus metrics, structured logging, OpenTelemetry instrumentation
+- **Security:** Input validation, prompt injection protection, API key authentication
+- **Resilience:** Automatic retries, fallback models, circuit breakers
 
 ---
 
@@ -25,14 +25,13 @@ This directory contains the core AI services that power the AI-Augmented SOC pla
 
 **Purpose:** LLM-powered security alert analysis and prioritization
 
-**Technology Stack:**
-- FastAPI
-- Ollama (Foundation-Sec-8B / LLaMA 3.1)
-- Pydantic (structured outputs)
+**Technology Stack:** FastAPI, Ollama (llama3.2:3b), Pydantic (structured outputs), async worker pool
 
 **API Endpoints:**
 - `POST /analyze` - Analyze single alert
 - `POST /batch` - Batch process alerts
+- `POST /analyze/async` - Async analysis with job tracking
+- `GET /jobs/{job_id}` - Check async job status
 - `GET /health` - Health check
 - `GET /metrics` - Prometheus metrics
 
@@ -40,171 +39,171 @@ This directory contains the core AI services that power the AI-Augmented SOC pla
 - Severity classification (Critical/High/Medium/Low/Info)
 - IOC extraction (IPs, domains, hashes)
 - MITRE ATT&CK mapping
-- True/false positive detection
-- Confidence scoring
-- Actionable recommendations
-
-**Performance Targets:**
-- **F1 Score:** >0.90
-- **Latency:** <10 seconds per alert
-- **Throughput:** 250 alerts/day
-- **Auto-action threshold:** 80% confidence
-
-**Status:** Scaffolded - Ready for Week 4 implementation
+- True/false positive detection with confidence scoring
+- PII redaction before LLM processing
+- Prompt injection detection
+- ML-aware prompt enrichment (calls ML Inference service)
 
 ---
 
-### 2. Log Summarization Service (`log-summarization/`)
+### 2. RAG Service (`rag-service/`)
 
-**Purpose:** Batch processing and summarization of security logs
+**Purpose:** Retrieval-Augmented Generation for grounding LLM responses in verified security knowledge
 
-**Technology Stack:**
-- FastAPI
-- Ollama (LLaMA 3.1 8B)
-- LibreLog (log parsing)
-- OpenSearch (log storage)
-- ChromaDB (summary storage)
-
-**API Endpoints:**
-- `POST /summarize` - Generate summary for time range
-- `POST /summarize/daily` - Automated daily summary
-- `GET /summaries` - List recent summaries
-
-**Key Features:**
-- Process 1000+ logs per batch
-- Daily/weekly security briefings
-- Threat indicator extraction
-- Executive-friendly summaries
-- Historical trend analysis
-
-**Performance Targets:**
-- **BERTScore:** >0.85
-- **Throughput:** 1M+ logs/day
-- **Time savings:** 42%+ vs manual review
-
-**Status:** Scaffolded - Ready for Week 6 implementation
-
----
-
-### 3. RAG Service (`rag-service/`)
-
-**Purpose:** Retrieval-Augmented Generation for grounding LLM responses
-
-**Technology Stack:**
-- FastAPI
-- ChromaDB (vector database)
-- sentence-transformers (all-MiniLM-L6-v2)
-- LangChain (RAG framework)
+**Technology Stack:** FastAPI, ChromaDB (vector database), sentence-transformers (all-MiniLM-L6-v2)
 
 **API Endpoints:**
 - `POST /retrieve` - Semantic search over knowledge base
-- `POST /ingest` - Add documents to knowledge base
+- `POST /ingest` - Add custom documents
+- `POST /ingest/mitre` - Ingest MITRE ATT&CK data
+- `POST /ingest/cve` - Ingest CVE data
+- `POST /ingest/runbooks` - Ingest response playbooks
 - `GET /collections` - List available collections
+- `GET /health` - Health check
 
 **Knowledge Base Collections:**
 - **mitre_attack:** 3000+ MITRE ATT&CK techniques
 - **cve_database:** Critical vulnerabilities (CVSS >= 9.0)
-- **incident_history:** Resolved TheHive cases
-- **security_runbooks:** Response playbooks
-
-**Key Features:**
-- Semantic search (cosine similarity)
-- Top-k retrieval with confidence thresholds
-- Source citation in LLM responses
-- Hallucination reduction (30-40%)
-
-**Performance Targets:**
-- **RAGAS Faithfulness:** >0.90
-- **Retrieval Precision:** >0.85
-- **Latency:** <500ms per query
-
-**Status:** Scaffolded - Ready for Week 5 implementation
+- **security_runbooks:** Response playbooks (SSH brute force, ransomware, phishing, etc.)
 
 ---
 
-### 4. Common Library (`common/`)
+### 3. Wazuh Integration (`wazuh-integration/`)
+
+**Purpose:** Webhook receiver for Wazuh alert ingestion and enrichment pipeline
+
+**Technology Stack:** FastAPI, httpx (async HTTP), Wazuh Manager API client
+
+**API Endpoints:**
+- `POST /webhook` - Receive Wazuh alerts
+- `GET /health` - Health check
+
+**Pipeline:** Receive alert → AI triage → Conditional RAG enrichment → Forward to correlation engine
+
+---
+
+### 4. Feedback Service (`feedback-service/`)
+
+**Purpose:** Alert persistence and analyst feedback collection for model retraining
+
+**Technology Stack:** FastAPI, PostgreSQL (asyncpg + SQLAlchemy async), multi-tenant support
+
+**API Endpoints:**
+- `POST /alerts` - Store new alerts
+- `POST /feedback/{alert_id}` - Submit analyst feedback
+- `GET /feedback/stats` - Feedback statistics
+- `GET /roi/metrics` - ROI metrics for business value tracking
+
+---
+
+### 5. Correlation Engine (`correlation-engine/`)
+
+**Purpose:** Incident grouping, kill-chain tracking, attack simulation, and risk scoring
+
+**Technology Stack:** FastAPI, Markov chain prediction, Monte Carlo swarm simulation
+
+**API Endpoints:**
+- `POST /correlate` - Correlate alerts into incidents
+- `GET /incidents` - List incidents
+- `POST /simulate` - Run attack campaign simulation
+- `POST /simulate/swarm/*` - Swarm simulation experiments
+- `GET /risk-scores` - Per-host risk scores
+- `POST /predict/*` - Markov chain next-stage prediction
+
+**Key Features:**
+- Alert-to-incident correlation (IP affinity, temporal proximity, MITRE kill chain)
+- 4 attacker archetypes (opportunist, APT, ransomware, insider)
+- 3 defender archetypes (SOC analyst, incident responder, threat hunter)
+- Monte Carlo leader/follower swarm simulation
+- Per-host risk scoring from simulation results
+
+---
+
+### 6. Response Orchestrator (`response-orchestrator/`)
+
+**Purpose:** Autonomous defense planning with graduated autonomy controls
+
+**Technology Stack:** FastAPI, D3FEND countermeasure KB, PostgreSQL persistence
+
+**API Endpoints:**
+- `POST /defend` - Generate defense plan
+- `GET /plans` - List defense plans
+- `POST /plans/{id}/approve` - Approve plan execution
+- `GET /d3fend/countermeasures` - D3FEND knowledge base
+
+**Key Features:**
+- D3FEND countermeasure mapping
+- Safety checks and blast-radius assessment
+- Approval tiers: Observe, Recommend, Auto-safe, Auto-veto, Human-required
+- Post-execution verification via re-simulation
+- Adapter stubs for firewall, EDR, identity, and Wazuh Active Response
+
+---
+
+### 7. Rule Generator (`rule-generator/`)
+
+**Purpose:** LLM-generated Sigma detection rules with back-testing
+
+**Technology Stack:** FastAPI, Ollama, in-memory rule store
+
+**API Endpoints:**
+- `POST /generate` - Generate Sigma rule from alert
+- `POST /backtest` - Back-test rule against historical alerts
+- `GET /rules` - List generated rules
+- `POST /rules/{id}/approve` - Approve rule
+
+---
+
+### 8. Retraining Pipeline (`retraining/`)
+
+**Purpose:** Feedback-driven model retraining with champion/challenger promotion
+
+**Technology Stack:** CLI tool, scikit-learn, XGBoost, PostgreSQL
+
+**Usage:**
+```bash
+python retrain.py                    # Retrain if enough feedback
+python retrain.py --force            # Force retrain
+python retrain.py --evaluate-only    # Evaluate without retraining
+```
+
+---
+
+### 9. Common Library (`common/`)
 
 **Purpose:** Shared utilities across all services
 
 **Modules:**
-- `ollama_client.py` - Reusable Ollama API client
-- `logging_config.py` - Structured JSON logging
+- `ollama_client.py` - Reusable Ollama API client with fallback models
+- `logging_config.py` - Structured JSON logging with Wazuh integration
 - `metrics.py` - Prometheus metrics wrapper
-- `security.py` - Input validation & prompt injection detection
-
-**Usage:**
-```python
-from common import OllamaClient, setup_logging, ServiceMetrics
-
-# Initialize logging
-setup_logging("my-service", log_level="INFO")
-
-# Create LLM client
-llm = OllamaClient(host="http://ollama:11434", primary_model="llama3.1:8b")
-
-# Generate completion
-response = await llm.generate("Analyze this alert...", temperature=0.1)
-
-# Record metrics
-metrics = ServiceMetrics("my-service")
-metrics.record_llm_request(model="llama3.1:8b", status="success", latency=5.2)
-```
+- `security.py` - Input validation, prompt injection detection, security headers
+- `auth.py` - JWT/API key authentication utilities
+- `rate_limit.py` - Sliding window rate limiting
+- `pipeline.py` - Data pipeline utilities
+- `integration.py` - Event bus and integration helpers
 
 ---
 
 ## System Architecture
 
-### Data Flow Diagram
+### Data Flow
 
 ```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│   Wazuh      │      │   Shuffle    │      │ Alert Triage │
-│   Manager    │─────>│    SOAR      │─────>│   Service    │
-│              │Alert │              │HTTP  │ (Foundation- │
-└──────────────┘      └──────────────┘      │  Sec-8B)     │
-                                             └──────┬───────┘
-                                                    │
-                                             ┌──────▼───────┐
-                      ┌─────────────────────┤ RAG Service  │
-                      │                     │ (ChromaDB)   │
-                      │                     └──────────────┘
-                      │
-                      ▼
-              ┌──────────────┐
-              │   TheHive    │
-              │ Case Manager │
-              └──────────────┘
-
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│ OpenSearch   │      │ Log Summary  │      │  ChromaDB    │
-│ (Wazuh Logs) │─────>│   Service    │─────>│ (Summaries)  │
-│              │Query │ (LLaMA 3.1)  │Store │              │
-└──────────────┘      └──────────────┘      └──────────────┘
+Security Events (Wazuh/Suricata/Zeek)
+  → Wazuh Integration (webhook, port 8002)
+    → Alert Triage (LLM analysis, port 8100)
+      ↔ RAG Service (knowledge retrieval, port 8300)
+      → ML Inference (network flow classification, port 8500)
+      → Feedback Service (persistence, port 8400)
+    → Correlation Engine (incident grouping, port 8600)
+      → Swarm Simulation (attack campaigns)
+      → Risk Scoring (per-host risk)
+      → Response Orchestrator (autonomous defense, port 8800)
+        → Rule Generator (Sigma rules, port 8700)
+        → Adapter Execution (firewall/EDR/identity stubs)
+        → Verification (re-simulation)
 ```
-
-### Integration Points
-
-**Wazuh → Shuffle → Alert Triage:**
-1. Wazuh detects security event
-2. Generates alert (JSON)
-3. Sends webhook to Shuffle
-4. Shuffle forwards to Alert Triage `/analyze`
-5. LLM analyzes alert (severity, IOCs, recommendations)
-6. Shuffle routes to TheHive based on severity
-
-**Alert Triage ↔ RAG Service:**
-1. Alert Triage queries RAG `/retrieve` for context
-2. RAG searches ChromaDB for similar incidents/techniques
-3. Returns top-3 relevant documents
-4. Alert Triage injects context into LLM prompt
-5. LLM generates response grounded in verified knowledge
-
-**OpenSearch → Log Summarization → ChromaDB:**
-1. Log Summarization queries OpenSearch for logs (24 hours)
-2. Parses logs with LibreLog
-3. Batches logs by category
-4. LLM generates executive summary
-5. Stores summary in ChromaDB for RAG retrieval
 
 ---
 
@@ -214,86 +213,34 @@ metrics.record_llm_request(model="llama3.1:8b", status="success", latency=5.2)
 
 **File:** `docker-compose/ai-services.yml`
 
-```yaml
-version: '3.8'
-
-services:
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-models:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
-  alert-triage:
-    build: ./services/alert-triage
-    ports:
-      - "8000:8000"
-    environment:
-      - TRIAGE_OLLAMA_HOST=http://ollama:11434
-      - TRIAGE_PRIMARY_MODEL=foundation-sec-8b
-    depends_on:
-      - ollama
-
-  rag-service:
-    build: ./services/rag-service
-    ports:
-      - "8001:8001"
-    environment:
-      - RAG_CHROMADB_HOST=chromadb
-    depends_on:
-      - chromadb
-
-  log-summarization:
-    build: ./services/log-summarization
-    ports:
-      - "8002:8002"
-    environment:
-      - SUMMARIZER_OLLAMA_HOST=http://ollama:11434
-      - SUMMARIZER_OPENSEARCH_HOST=http://opensearch:9200
-    depends_on:
-      - ollama
-      - opensearch
-
-  chromadb:
-    image: chromadb/chroma:latest
-    ports:
-      - "8000:8000"
-    volumes:
-      - chromadb-data:/chroma/chroma
-
-volumes:
-  ollama-models:
-  chromadb-data:
-```
-
-### Build and Run
-
 ```bash
-# Build all services
-cd services
-docker-compose -f ../docker-compose/ai-services.yml build
-
-# Start all services
-docker-compose -f ../docker-compose/ai-services.yml up -d
+# Build and start all AI services
+docker compose -f docker-compose/ai-services.yml up -d
 
 # Check health
-curl http://localhost:8000/health  # Alert Triage
-curl http://localhost:8001/health  # RAG Service
-curl http://localhost:8002/health  # Log Summarization
+curl http://localhost:8100/health   # Alert Triage
+curl http://localhost:8300/health   # RAG Service
+curl http://localhost:8400/health   # Feedback Service
+curl http://localhost:8500/health   # ML Inference
+curl http://localhost:8600/health   # Correlation Engine
+curl http://localhost:8700/health   # Rule Generator
+curl http://localhost:8800/health   # Response Orchestrator
 
 # View logs
-docker-compose -f ../docker-compose/ai-services.yml logs -f alert-triage
+docker compose -f docker-compose/ai-services.yml logs -f alert-triage
 
 # Stop all services
-docker-compose -f ../docker-compose/ai-services.yml down
+docker compose -f docker-compose/ai-services.yml down
+```
+
+### One-Command Deploy (Full Stack)
+
+```bash
+# Linux/macOS
+./deploy-ai-soc.sh
+
+# Windows
+.\deploy-ai-soc.ps1
 ```
 
 ---
@@ -303,78 +250,45 @@ docker-compose -f ../docker-compose/ai-services.yml down
 ### Prerequisites
 
 - Python 3.11+
-- Docker
-- Ollama (with models)
-- OpenSearch (for log-summarization)
-- ChromaDB (for RAG)
+- Docker and Docker Compose v2
+- Ollama (with models pulled)
 
-### Setup Development Environment
+### Quick Start
 
 ```bash
 # Clone repository
 git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC/services
+cd AI_SOC
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# Run the deploy script (starts everything)
+./deploy-ai-soc.sh
 
-# Install dependencies for all services
-cd alert-triage && pip install -r requirements.txt && cd ..
-cd log-summarization && pip install -r requirements.txt && cd ..
-cd rag-service && pip install -r requirements.txt && cd ..
-
-# Start Ollama
-docker run -d -p 11434:11434 --name ollama ollama/ollama
-docker exec ollama ollama pull llama3.1:8b
-
-# Start ChromaDB
-docker run -d -p 8000:8000 --name chromadb chromadb/chroma
-
-# Run service (example: alert-triage)
-cd alert-triage
-python main.py  # Starts on http://localhost:8000
+# Or manually start just the AI services
+docker compose -f docker-compose/ai-services.yml up -d
 ```
 
 ---
 
 ## Testing
 
-### Unit Tests
-
-Each service has its own test suite:
+### Running Tests
 
 ```bash
-# Alert Triage tests
-cd alert-triage
-pytest tests/ -v --cov=.
+# Run all unit tests
+make test
 
-# RAG Service tests
-cd rag-service
-pytest tests/ -v --cov=.
+# Or with pytest directly
+pytest tests/unit/ -v --cov=services
 
-# Log Summarization tests
-cd log-summarization
-pytest tests/ -v --cov=.
-```
+# Run specific test categories
+pytest tests/unit/ -v                    # Unit tests
+pytest tests/integration/ -v             # Integration tests (requires running services)
+pytest tests/security/ -v -m security    # Security tests
+pytest tests/e2e/ -v                     # End-to-end tests
 
-### Integration Tests
-
-```bash
-# End-to-end workflow test
-cd services
-pytest tests/integration/ -v
-```
-
-### Performance Benchmarks
-
-```bash
 # Load testing with Locust
-cd services
-locust -f tests/load_test.py --host http://localhost:8000
+locust -f tests/load/locustfile.py --host http://localhost:8100
 ```
-
-**TODO: Week 4** - Implement comprehensive test suites
 
 ---
 
@@ -382,47 +296,15 @@ locust -f tests/load_test.py --host http://localhost:8000
 
 ### Prometheus Metrics
 
-All services expose `/metrics` endpoint:
+All services expose `/metrics` endpoints. See `docker-compose/monitoring-stack.yml` for the full monitoring stack (Prometheus, Grafana, Alertmanager, Loki, Promtail).
 
-```bash
-curl http://localhost:8000/metrics
-```
+### Grafana Dashboards
 
-**Key Metrics:**
-- `{service}_requests_total` - Request count by status
-- `{service}_request_duration_seconds` - Latency histogram
-- `{service}_llm_requests_total` - LLM calls
-- `{service}_llm_latency_seconds` - LLM inference time
-- `{service}_errors_total` - Error count by type
-
-### Grafana Dashboard
-
-**TODO: Week 6** - Create Grafana dashboards
-
-**Panels:**
-1. Requests per second (by service)
-2. P50/P95/P99 latency
-3. LLM inference time
-4. Error rate
-5. Alert severity distribution
-6. RAG retrieval quality
+Auto-provisioned dashboards are available in `config/grafana/`. Access Grafana at `http://localhost:3000` after starting the monitoring stack.
 
 ### Structured Logging
 
-All logs are JSON-formatted for ELK Stack:
-
-```json
-{
-  "timestamp": "2025-01-13T14:30:00Z",
-  "service": "alert-triage",
-  "level": "INFO",
-  "logger": "llm_client",
-  "message": "Alert analyzed successfully",
-  "alert_id": "wazuh-001",
-  "severity": "high",
-  "confidence": 0.92
-}
-```
+All services emit JSON-structured logs compatible with ELK/Loki aggregation via `structlog`.
 
 ---
 
@@ -431,7 +313,6 @@ All logs are JSON-formatted for ELK Stack:
 ### Input Validation
 
 All services validate inputs using `common/security.py`:
-
 - Max length checks (10,000 characters)
 - SQL injection detection
 - Command injection detection
@@ -440,7 +321,6 @@ All services validate inputs using `common/security.py`:
 ### Prompt Injection Protection
 
 LLM inputs are screened for injection attempts:
-
 - System prompt override attempts
 - Role switching ("you are now...")
 - Jailbreak patterns ("DAN mode")
@@ -448,105 +328,9 @@ LLM inputs are screened for injection attempts:
 
 ### Secrets Management
 
-**Current:** Environment variables
-**TODO: Week 8** - Integrate HashiCorp Vault
+Environment variables with `.env.example` as template. Use `scripts/generate_secure_credentials.py` to generate production credentials.
 
-Never commit:
-- API keys
-- Passwords
-- Ollama API tokens (if auth enabled)
-- TheHive API keys
-
-### Network Security
-
-**TODO: Week 8** - Production hardening:
-- TLS/SSL for all inter-service communication
-- API key authentication
-- Rate limiting per client
-- WAF integration
-
----
-
-## Performance Optimization
-
-### Current Optimizations
-
-1. **Async I/O:** Non-blocking HTTP calls with `httpx`
-2. **Connection Pooling:** Reuse HTTP connections to Ollama
-3. **Low Temperature:** Deterministic LLM outputs (0.1)
-4. **Model Fallback:** Automatic retry with secondary model
-
-### Future Optimizations (Week 6+)
-
-- [ ] Batch processing with `asyncio.gather`
-- [ ] Request queuing for high load
-- [ ] GPU acceleration for Ollama
-- [ ] Alert deduplication caching
-- [ ] RAG result caching (1-hour TTL)
-
----
-
-## Roadmap
-
-### Week 4: Alert Triage MVP
-- [x] Service scaffolding
-- [ ] Ollama deployment (Foundation-Sec-8B)
-- [ ] Shuffle integration
-- [ ] Initial evaluation (50 alerts)
-
-### Week 5: RAG Implementation
-- [x] RAG service scaffolding
-- [ ] ChromaDB deployment
-- [ ] MITRE ATT&CK ingestion (3000+ techniques)
-- [ ] RAG-enhanced alert triage
-- [ ] Hallucination reduction measurement
-
-### Week 6: Log Summarization
-- [x] Log summarization scaffolding
-- [ ] LibreLog integration
-- [ ] OpenSearch query pipeline
-- [ ] Daily summary automation
-- [ ] BERTScore evaluation
-
-### Week 7-8: Advanced Features
-- [ ] Multi-agent collaboration (LangGraph)
-- [ ] Report generation (AGIR)
-- [ ] Security hardening
-- [ ] Performance optimization
-
----
-
-## Contributing
-
-**TODO: Phase 5** - Open for community contributions
-
-**Current Development:**
-- Abdul Bari (abdul.bari8019@coyote.csusb.edu)
-- CSUSB Cybersecurity Research
-
----
-
-## References
-
-### Research Papers
-
-- **Foundation-Sec-8B:** https://arxiv.org/abs/2504.21039
-- **LibreLog:** https://arxiv.org/abs/2408.01585
-- **AGIR (Report Generation):** https://github.com/Mhackiori/AGIR
-- **RAGAS (RAG Evaluation):** https://arxiv.org/abs/2309.15217
-
-### Documentation
-
-- **Ollama API:** https://github.com/ollama/ollama/blob/main/docs/api.md
-- **ChromaDB:** https://docs.trychroma.com/
-- **FastAPI:** https://fastapi.tiangolo.com/
-- **MITRE ATT&CK:** https://attack.mitre.org/
-
-### Tools & Frameworks
-
-- **LangChain:** https://python.langchain.com/
-- **sentence-transformers:** https://www.sbert.net/
-- **Prometheus:** https://prometheus.io/docs/
+**Never commit:** API keys, passwords, Ollama API tokens, TheHive API keys, SSL private keys.
 
 ---
 
@@ -554,60 +338,48 @@ Never commit:
 
 ### Ollama Connection Failed
 
-**Symptom:** `ollama_connected: false` in health check
-
-**Solution:**
 ```bash
-# Check if Ollama is running
 docker ps | grep ollama
-
-# Check logs
 docker logs ollama
-
-# Verify model is downloaded
 docker exec ollama ollama list
 ```
 
 ### ChromaDB Initialization Failed
 
-**Symptom:** RAG service errors on startup
-
-**Solution:**
 ```bash
-# Check ChromaDB status
 docker ps | grep chroma
-
-# Reset ChromaDB data (WARNING: deletes all data)
-docker-compose down -v
-docker-compose up -d chromadb
+docker compose down -v
+docker compose up -d chromadb
 ```
 
 ### High Latency / Timeout
 
-**Symptom:** Requests take >30 seconds
-
-**Solution:**
 - Check Ollama GPU usage: `nvidia-smi`
-- Reduce `max_tokens` in config
-- Use smaller model (Mistral 7B instead of LLaMA 8B)
-- Enable batch processing
+- Reduce `max_tokens` in service config
+- Use a smaller model (llama3.2:3b instead of larger alternatives)
+- Enable batch processing for bulk operations
+
+---
+
+## References
+
+- **Ollama API:** https://github.com/ollama/ollama/blob/main/docs/api.md
+- **ChromaDB:** https://docs.trychroma.com/
+- **FastAPI:** https://fastapi.tiangolo.com/
+- **MITRE ATT&CK:** https://attack.mitre.org/
+- **D3FEND:** https://d3fend.mitre.org/
+- **Sigma Rules:** https://sigmahq.io/
 
 ---
 
 ## License
 
-**MIT License** - See LICENSE file
+**Apache 2.0 License** - See [LICENSE](../LICENSE) file
 
 ---
 
-## Contact
+## Contributing
 
-**Project Lead:** Abdul Bari
-**Email:** abdul.bari8019@coyote.csusb.edu
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for development setup and contribution guidelines.
+
 **GitHub:** https://github.com/zhadyz/AI_SOC
-
----
-
-**Last Updated:** 2025-01-13
-**Phase:** 3 (Weeks 4-5) - AI Layer Development
-**Status:** Scaffolding Complete

@@ -39,6 +39,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: Tests that take >5 seconds")
     config.addinivalue_line("markers", "requires_ollama: Tests requiring Ollama")
     config.addinivalue_line("markers", "requires_docker: Tests requiring Docker")
+    config.addinivalue_line("markers", "requires_browser: Tests requiring browser/Playwright")
 
 
 @pytest.fixture(scope="session")
@@ -109,7 +110,7 @@ def sample_security_alert() -> dict:
 def sample_network_flow() -> dict:
     """Sample network flow for ML inference testing"""
     return {
-        "features": [0.0] * 78,  # 78 features as expected by ML models
+        "features": [0.0] * 77,  # 77 features as expected by ML models
         "model_name": "random_forest"
     }
 

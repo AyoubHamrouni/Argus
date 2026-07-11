@@ -8,9 +8,7 @@ with options for multi-class attack categorization.
 Architecture: Random Forest, XGBoost, Decision Tree
 Target Metrics: >99% accuracy, <100ms inference latency, <1% false positive rate
 
-Author: HOLLOWED_EYES
-Mission: OPERATION ML-BASELINE
-Date: 2025-10-13
+Author: AI-SOC Team
 """
 
 import os
@@ -38,7 +36,7 @@ import xgboost as xgb
 warnings.filterwarnings('ignore')
 
 # Constants
-PROJECT_ROOT = Path(r"C:\Users\Abdul\Desktop\Bari 2025 Portfolio\AI_SOC")
+PROJECT_ROOT = Path(__file__).parent.parent
 DATASET_PATH = PROJECT_ROOT / "datasets" / "CICIDS2017" / "raw"
 MODEL_PATH = PROJECT_ROOT / "models"
 EVAL_PATH = PROJECT_ROOT / "evaluation"
@@ -458,7 +456,7 @@ def generate_evaluation_report(results, label_encoder, output_path):
     report.append("# CICIDS2017 Baseline Models - Evaluation Report\n")
     report.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     report.append(f"**Mission:** OPERATION ML-BASELINE\n")
-    report.append(f"**Agent:** HOLLOWED_EYES\n\n")
+    report.append(f"**Agent:** AI-SOC Team\n\n")
 
     report.append("## Executive Summary\n\n")
     report.append("This report presents the performance evaluation of three baseline machine learning models ")
@@ -580,7 +578,7 @@ def main():
     print("CICIDS2017 INTRUSION DETECTION - ML TRAINING PIPELINE")
     print("="*80)
     print(f"Mission: OPERATION ML-BASELINE")
-    print(f"Agent: HOLLOWED_EYES")
+    print(f"Agent: AI-SOC Team")
     print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*80)
 

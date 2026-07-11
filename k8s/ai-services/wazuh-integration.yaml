@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wazuh-integration
+  namespace: ai-soc
+  labels:
+    app: wazuh-integration
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wazuh-integration
+  template:
+    metadata:
+      labels:
+        app: wazuh-integration
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: wazuh-integration
+        image: wazuh-integration:latest
+        ports:
+        - containerPort: 8007
+        envFrom:
+        - configMapRef:
+            name: ai-soc-config
+        - secretRef:
+            name: ai-soc-secrets
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 0.5
+          requests:
+            memory: 256Mi
+            cpu: 0.25
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8007
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8007
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wazuh-integration
+  namespace: ai-soc
+spec:
+  selector:
+    app: wazuh-integration
+  ports:
+  - port: 8007
+    targetPort: 8007
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wazuh-integration
+  namespace: ai-soc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wazuh-integration
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

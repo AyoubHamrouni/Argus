@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-triage
+  namespace: ai-soc
+  labels:
+    app: alert-triage
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: alert-triage
+  template:
+    metadata:
+      labels:
+        app: alert-triage
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: alert-triage
+        image: alert-triage:latest
+        ports:
+        - containerPort: 8001
+        envFrom:
+        - configMapRef:
+            name: ai-soc-config
+        - secretRef:
+            name: ai-soc-secrets
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 0.5
+          requests:
+            memory: 256Mi
+            cpu: 0.25
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-triage
+  namespace: ai-soc
+spec:
+  selector:
+    app: alert-triage
+  ports:
+  - port: 8001
+    targetPort: 8001
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: alert-triage
+  namespace: ai-soc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: alert-triage
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

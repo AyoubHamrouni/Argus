@@ -15,9 +15,14 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Histogram, generate_latest
 from starlette.responses import Response
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from services.common.tracing import init_tracing, instrument_app
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
 
 from config import Settings
 from database import DatabaseManager
@@ -66,6 +71,10 @@ async def lifespan(app: FastAPI):
     global db
     logger.info("Starting Feedback Service")
 
+    # Initialize OpenTelemetry tracing
+    init_tracing("feedback-service")
+    instrument_app(app, "feedback-service")
+
     try:
         db = DatabaseManager(settings.database_url)
         await db.init_db()
@@ -74,19 +83,56 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize database: {e}")
         raise
 
+    # Initialize Redis cache
+    import os
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
 
+    await close_redis()
     logger.info("Shutting down Feedback Service")
     if db:
         await db.close()
 
+# Security
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Enforce strict API key authentication if enabled."""
+    if not settings.api_key_enabled:
+        return True
+    if not credentials or credentials.credentials != settings.api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
 
 app = FastAPI(
     title="Feedback Service",
     description="Alert persistence and analyst feedback for the AI-SOC learning flywheel",
     version=settings.service_version,
     lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)]
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(RateLimitMiddleware)
+
+# OpenTelemetry Instrumentation
+FastAPIInstrumentor.instrument_app(app)
+
+router = APIRouter(prefix="/api/v1/feedback", tags=["v1"])
+app.include_router(router)
 
 
 # --- Health Check ---
@@ -109,7 +155,7 @@ async def health_check():
 # --- Alert Persistence ---
 
 
-@app.post("/alerts")
+@router.post("/alerts")
 async def store_alert(request: StoreAlertRequest):
     """
     Persist an alert and its triage result.
@@ -128,7 +174,7 @@ async def store_alert(request: StoreAlertRequest):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/alerts")
+@router.get("/alerts")
 async def query_alerts(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -138,11 +184,13 @@ async def query_alerts(
     has_feedback: Optional[bool] = None,
     start_time: Optional[datetime] = None,
     end_time: Optional[datetime] = None,
+    organization_id: Optional[str] = Query(None, description="Filter by organization/tenant ID"),
 ):
     """
     Query stored alerts with filtering and pagination.
 
-    Supports filtering by severity, IP addresses, feedback status, and time range.
+    Supports filtering by severity, IP addresses, feedback status, time range,
+    and organization_id for multi-tenant deployments.
     """
     with REQUEST_DURATION.labels(endpoint="query_alerts").time():
         try:
@@ -155,13 +203,14 @@ async def query_alerts(
                 has_feedback=has_feedback,
                 start_time=start_time,
                 end_time=end_time,
+                organization_id=organization_id,
             )
         except Exception as e:
             logger.error(f"Failed to query alerts: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/alerts/{alert_id}")
+@router.get("/alerts/{alert_id}")
 async def get_alert(alert_id: str):
     """Get a single alert with all its feedback."""
     with REQUEST_DURATION.labels(endpoint="get_alert").time():
@@ -176,7 +225,7 @@ async def get_alert(alert_id: str):
 # to avoid FastAPI treating "stats" as an alert_id parameter.
 
 
-@app.get("/feedback/stats", response_model=FeedbackStats)
+@router.get("/feedback/stats", response_model=FeedbackStats)
 async def get_feedback_stats():
     """
     Get aggregated feedback statistics.
@@ -193,7 +242,7 @@ async def get_feedback_stats():
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/feedback/{alert_id}")
+@router.post("/feedback/{alert_id}")
 async def submit_feedback(alert_id: str, submission: FeedbackSubmission):
     """
     Submit analyst feedback on a triage result.
@@ -225,13 +274,35 @@ async def submit_feedback(alert_id: str, submission: FeedbackSubmission):
         return result
 
 
-@app.get("/feedback/{alert_id}")
+@router.get("/feedback/{alert_id}")
 async def get_alert_feedback(alert_id: str):
     """Get all feedback for a specific alert."""
     alert = await db.get_alert(alert_id)
     if not alert:
         raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
     return {"alert_id": alert_id, "feedback": alert.get("feedback", [])}
+
+
+# --- ROI & Business Metrics ---
+
+
+@router.get("/roi/metrics", tags=["ROI"], summary="Business ROI metrics for the SOC platform")
+async def get_roi_metrics(
+    organization_id: Optional[str] = Query(None, description="Filter by organization/tenant ID"),
+):
+    """
+    Return quantifiable business ROI metrics for the SOC platform.
+
+    Includes analyst time saved, accuracy rate, throughput by severity,
+    and true/false positive counts. Optionally filtered by `organization_id`
+    for multi-tenant deployments.
+    """
+    with REQUEST_DURATION.labels(endpoint="roi_metrics").time():
+        try:
+            return await db.get_roi_metrics(organization_id=organization_id)
+        except Exception as e:
+            logger.error(f"Failed to compute ROI metrics: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 # --- Metrics ---

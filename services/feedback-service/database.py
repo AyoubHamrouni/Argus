@@ -47,6 +47,7 @@ class AlertRecord(Base):
     ai_is_true_positive = Column(Boolean, nullable=True)
     ml_prediction = Column(String(20), nullable=True)
     ml_confidence = Column(Float, nullable=True)
+    organization_id = Column(String(100), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     feedback_count = Column(Integer, default=0)
 
@@ -141,6 +142,7 @@ class DatabaseManager:
                 ai_is_true_positive=data.get("ai_is_true_positive"),
                 ml_prediction=data.get("ml_prediction"),
                 ml_confidence=data.get("ml_confidence"),
+                organization_id=data.get("organization_id"),
             )
             session.add(record)
             await session.commit()
@@ -206,6 +208,7 @@ class DatabaseManager:
         has_feedback: Optional[bool] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
+        organization_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Query alerts with filtering and pagination."""
         async with self.session() as session:
@@ -227,6 +230,8 @@ class DatabaseManager:
                 conditions.append(AlertRecord.created_at >= start_time)
             if end_time:
                 conditions.append(AlertRecord.created_at <= end_time)
+            if organization_id:
+                conditions.append(AlertRecord.organization_id == organization_id)
 
             if conditions:
                 query = query.where(and_(*conditions))
@@ -407,6 +412,97 @@ class DatabaseManager:
                     round(avg_conf_wrong, 4) if avg_conf_wrong else None
                 ),
                 "top_false_positive_sources": top_fps,
+            }
+
+    async def get_roi_metrics(self, organization_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Compute business ROI metrics for the SOC platform.
+
+        Returns analyst time saved, accuracy rates, and throughput metrics
+        to demonstrate quantifiable business value.
+        """
+        async with self.session() as session:
+            conditions = []
+            if organization_id:
+                conditions.append(AlertRecord.organization_id == organization_id)
+
+            base_query = select(AlertRecord)
+            if conditions:
+                base_query = base_query.where(and_(*conditions))
+
+            # Total alerts processed
+            total_q = select(func.count(AlertRecord.id))
+            if conditions:
+                total_q = total_q.where(and_(*conditions))
+            total_alerts = (await session.execute(total_q)).scalar() or 0
+
+            # True positives / false positives from feedback
+            tp_q = (
+                select(func.count(FeedbackRecord.id))
+                .join(AlertRecord, AlertRecord.alert_id == FeedbackRecord.alert_id)
+                .where(FeedbackRecord.is_false_positive.is_(False))
+            )
+            fp_q = (
+                select(func.count(FeedbackRecord.id))
+                .join(AlertRecord, AlertRecord.alert_id == FeedbackRecord.alert_id)
+                .where(FeedbackRecord.is_false_positive.is_(True))
+            )
+            if conditions:
+                tp_q = tp_q.where(and_(*conditions))
+                fp_q = fp_q.where(and_(*conditions))
+
+            true_positives = (await session.execute(tp_q)).scalar() or 0
+            false_positives = (await session.execute(fp_q)).scalar() or 0
+            total_reviewed = true_positives + false_positives
+            accuracy_rate = round(true_positives / total_reviewed, 4) if total_reviewed > 0 else None
+
+            # Average confidence
+            avg_conf_q = select(func.avg(AlertRecord.ai_confidence))
+            if conditions:
+                avg_conf_q = avg_conf_q.where(and_(*conditions))
+            avg_confidence = (await session.execute(avg_conf_q)).scalar()
+
+            # Alerts by severity
+            sev_q = (
+                select(AlertRecord.ai_severity, func.count(AlertRecord.id).label("cnt"))
+                .group_by(AlertRecord.ai_severity)
+            )
+            if conditions:
+                sev_q = sev_q.where(and_(*conditions))
+            sev_result = await session.execute(sev_q)
+            alerts_by_severity = {
+                row[0] or "unknown": row[1]
+                for row in sev_result.all()
+            }
+
+            # Analyst time saved: sum estimated_analyst_time from triage_result_json
+            # Stored as JSONB; cast the field to numeric for aggregation
+            time_saved_q = select(
+                func.sum(
+                    func.cast(
+                        AlertRecord.triage_result_json["estimated_analyst_time"].as_string(),
+                        Float,
+                    )
+                )
+            )
+            if conditions:
+                time_saved_q = time_saved_q.where(and_(*conditions))
+            try:
+                total_time_saved = (await session.execute(time_saved_q)).scalar()
+            except Exception:
+                total_time_saved = None
+
+            return {
+                "total_alerts_processed": total_alerts,
+                "true_positives": true_positives,
+                "false_positives": false_positives,
+                "accuracy_rate": accuracy_rate,
+                "avg_confidence": round(avg_confidence, 4) if avg_confidence else None,
+                "total_analyst_time_saved_minutes": (
+                    round(total_time_saved, 1) if total_time_saved else None
+                ),
+                "alerts_by_severity": alerts_by_severity,
+                "organization_id": organization_id,
             }
 
     async def check_health(self) -> bool:

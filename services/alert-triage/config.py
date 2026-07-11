@@ -7,6 +7,7 @@ Manages environment variables and service configuration with Pydantic.
 
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 
 class Settings(BaseSettings):
@@ -76,13 +77,25 @@ class Settings(BaseSettings):
     request_timeout: int = 120
 
     # Security
-    api_key_enabled: bool = False
+    api_key_enabled: bool = True
     api_key: Optional[str] = None
 
     class Config:
         env_prefix = "TRIAGE_"
         env_file = ".env"
         case_sensitive = False
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Support Docker secrets via _FILE suffix
+        for field_name in self.model_fields.keys():
+            env_var = f"{self.Config.env_prefix}{field_name.upper()}_FILE"
+            if os.getenv(env_var):
+                try:
+                    with open(os.getenv(env_var), 'r') as f:
+                        setattr(self, field_name, f.read().strip())
+                except Exception as e:
+                    pass
 
 
 # Global settings instance

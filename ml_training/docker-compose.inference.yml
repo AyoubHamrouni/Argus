@@ -1,6 +1,6 @@
 # CICIDS2017 ML Inference Service - Docker Compose Configuration
 # Mission: OPERATION ML-BASELINE
-# Agent: HOLLOWED_EYES
+# Agent: AI-SOC Team
 #
 # Usage:
 #   docker-compose -f docker-compose.inference.yml up -d

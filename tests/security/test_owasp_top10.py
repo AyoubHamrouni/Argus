@@ -7,6 +7,7 @@ Mission: OPERATION TEST-FORTRESS
 Date: 2025-10-22
 """
 
+import os
 import pytest
 import sys
 from pathlib import Path
@@ -25,16 +26,17 @@ from security import validate_input, sanitize_log, detect_prompt_injection
 class TestAccessControl:
     """Test access control vulnerabilities"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run access control tests"
+    )
     async def test_unauthorized_endpoint_access(self, http_client, alert_triage_url):
         """Test access to protected endpoints without auth"""
-        try:
-            # TODO: When authentication is implemented, test unauthorized access
-            # For now, all endpoints are public (development mode)
-            response = await http_client.get(f"{alert_triage_url}/health", timeout=5.0)
-            # In production, this should require authentication
-            print(f"\n⚠️  WARNING: No authentication implemented yet")
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        # TODO: When authentication is implemented, test unauthorized access
+        # For now, all endpoints are public (development mode)
+        response = await http_client.get(f"{alert_triage_url}/health", timeout=5.0)
+        # In production, this should require authentication
+        print(f"\n⚠️  WARNING: No authentication implemented yet")
 
     async def test_privilege_escalation(self, http_client, alert_triage_url):
         """Test privilege escalation attempts"""
@@ -173,46 +175,48 @@ class TestSecureDesign:
 class TestSecurityConfiguration:
     """Test security configuration"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run security configuration tests"
+    )
     async def test_error_messages_sanitized(self, http_client, alert_triage_url):
         """Test error messages don't leak sensitive info"""
-        try:
-            # Send malformed request
-            response = await http_client.post(
-                f"{alert_triage_url}/analyze",
-                json={"malformed": "data"},
-                timeout=10.0
-            )
+        # Send malformed request
+        response = await http_client.post(
+            f"{alert_triage_url}/analyze",
+            json={"malformed": "data"},
+            timeout=10.0
+        )
 
-            if response.status_code in [400, 422, 500]:
-                error_data = response.json()
-                error_text = str(error_data)
+        if response.status_code in [400, 422, 500]:
+            error_data = response.json()
+            error_text = str(error_data)
 
-                # Should not contain sensitive paths or stack traces
-                assert "/Users/" not in error_text
-                assert "/home/" not in error_text
-                assert "Traceback" not in error_text
+            # Should not contain sensitive paths or stack traces
+            assert "/Users/" not in error_text
+            assert "/home/" not in error_text
+            assert "Traceback" not in error_text
 
-                print(f"\n✅ Error messages are sanitized")
+            print(f"\n✅ Error messages are sanitized")
+        else:
+            pytest.fail(f"Expected error status, got {response.status_code}")
 
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
-
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run security header tests"
+    )
     async def test_security_headers(self, http_client, alert_triage_url):
         """Test security headers are present"""
-        try:
-            response = await http_client.get(f"{alert_triage_url}/health", timeout=5.0)
+        response = await http_client.get(f"{alert_triage_url}/health", timeout=5.0)
 
-            headers = response.headers
+        headers = response.headers
 
-            # Check for security headers
-            # TODO: Add security headers middleware
-            print(f"\n🔒 Security Headers Check:")
-            print(f"   X-Content-Type-Options: {'present' if 'x-content-type-options' in headers else '❌ MISSING'}")
-            print(f"   X-Frame-Options: {'present' if 'x-frame-options' in headers else '❌ MISSING'}")
-            print(f"   Content-Security-Policy: {'present' if 'content-security-policy' in headers else '❌ MISSING'}")
-
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        # Check for security headers
+        # TODO: Add security headers middleware
+        print(f"\n🔒 Security Headers Check:")
+        print(f"   X-Content-Type-Options: {'present' if 'x-content-type-options' in headers else '❌ MISSING'}")
+        print(f"   X-Frame-Options: {'present' if 'x-frame-options' in headers else '❌ MISSING'}")
+        print(f"   Content-Security-Policy: {'present' if 'content-security-policy' in headers else '❌ MISSING'}")
 
 
 # ============================================================================
@@ -277,35 +281,37 @@ class TestIntegrityValidation:
 class TestSecurityLogging:
     """Test security logging and monitoring"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run security logging tests"
+    )
     async def test_failed_requests_logged(self, http_client, alert_triage_url):
         """Test failed requests are logged"""
-        try:
-            # Send invalid request
-            response = await http_client.post(
-                f"{alert_triage_url}/analyze",
-                json={"invalid": "data"},
-                timeout=10.0
-            )
+        # Send invalid request
+        response = await http_client.post(
+            f"{alert_triage_url}/analyze",
+            json={"invalid": "data"},
+            timeout=10.0
+        )
 
-            # Failed requests should be logged (check Prometheus metrics)
-            if response.status_code in [400, 422]:
-                print(f"\n📝 Failed request logged (status {response.status_code})")
+        # Failed requests should be logged (check Prometheus metrics)
+        if response.status_code in [400, 422]:
+            print(f"\n📝 Failed request logged (status {response.status_code})")
+        else:
+            pytest.fail(f"Expected error status, got {response.status_code}")
 
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
-
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run metrics endpoint tests"
+    )
     async def test_metrics_endpoint_exists(self, http_client, alert_triage_url):
         """Test Prometheus metrics endpoint exists"""
-        try:
-            response = await http_client.get(f"{alert_triage_url}/metrics", timeout=5.0)
+        response = await http_client.get(f"{alert_triage_url}/metrics", timeout=5.0)
 
-            assert response.status_code == 200
-            assert "triage_requests_total" in response.text or "content-type" in response.headers
+        assert response.status_code == 200
+        assert "triage_requests_total" in response.text or "content-type" in response.headers
 
-            print(f"\n📊 Metrics endpoint operational")
-
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        print(f"\n📊 Metrics endpoint operational")
 
 
 # ============================================================================

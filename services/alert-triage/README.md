@@ -383,7 +383,7 @@ Condition: severity == "critical" OR "high"
 
 **TODO: Phase 5** - Add contribution guidelines
 
-For now, all development by Abdul Bari (abdul.bari8019@coyote.csusb.edu)
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development setup.
 
 ---
 
@@ -397,4 +397,4 @@ For now, all development by Abdul Bari (abdul.bari8019@coyote.csusb.edu)
 
 **Last Updated:** 2025-01-13
 **Status:** Phase 3 (Week 4) - Development Ready
-**Maintainer:** Abdul Bari
+**Status:** Implemented

@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     auto_defend_enabled: bool = True
     auto_defend_min_severity: str = "high"  # Minimum severity to trigger defense
 
+    # Security
+    api_key_enabled: bool = True
+    api_key: str | None = None
+
     # Logging / Server
     log_level: str = "INFO"
     host: str = "0.0.0.0"

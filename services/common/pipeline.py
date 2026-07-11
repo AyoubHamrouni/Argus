@@ -5,7 +5,7 @@ Alert Processing Pipeline Orchestration
 End-to-end pipeline for automated security alert processing:
 Network Traffic → Detection → Triage → Case Creation → Response
 
-Author: HOLLOWED_EYES
+Author: AI-SOC Team
 Mission: OPERATION PIPELINE-INTEGRATION
 """
 
@@ -466,7 +466,7 @@ class AlertPipeline:
 
         # Check if we can extract from flow data
         if "flow" in alert:
-            # TODO: Extract 78 features from flow data
+            # TODO: Extract 77 features from flow data
             pass
 
         return None

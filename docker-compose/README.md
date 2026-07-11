@@ -914,11 +914,10 @@ tar xzf "$BACKUP_DIR/configs.tar.gz"
 - **Issue Tracker:** GitHub Issues
 
 ### Support
-- **Email:** abdul.bari8019@coyote.csusb.edu
+- **GitHub Issues:** https://github.com/zhadyz/AI_SOC/issues
 - **GitHub Discussions:** https://github.com/zhadyz/AI_SOC/discussions
 
 ---
 
 **Last Updated:** 2025-10-13
-**Author:** Abdul Bari
 **Version:** 1.0.0

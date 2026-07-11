@@ -54,6 +54,8 @@ class StoreAlertRequest(BaseModel):
     ai_is_true_positive: Optional[bool] = None
     ml_prediction: Optional[str] = None
     ml_confidence: Optional[float] = None
+    asset_criticality: Optional[str] = None
+    organization_id: Optional[str] = Field(None, description="Tenant/org identifier for multi-tenancy")
 
 
 class FeedbackSubmission(BaseModel):
@@ -108,6 +110,8 @@ class StoredAlertResponse(BaseModel):
     ai_is_true_positive: Optional[bool] = None
     ml_prediction: Optional[str] = None
     ml_confidence: Optional[float] = None
+    asset_criticality: Optional[str] = None
+    organization_id: Optional[str] = None
     created_at: datetime
     feedback_count: int = 0
     feedback: List[Dict[str, Any]] = []

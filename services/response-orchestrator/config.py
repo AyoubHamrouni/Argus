@@ -7,6 +7,7 @@ Controls simulation integration, approval thresholds, adapter settings,
 and verification parameters.
 """
 
+import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -63,6 +64,10 @@ class Settings(BaseSettings):
     critical_asset_always_requires_approval: bool = True
     dry_run_mode: bool = False  # When true, no actions are actually executed
 
+    # Security
+    api_key_enabled: bool = True
+    api_key: str | None = None
+
     # Logging / Server
     log_level: str = "INFO"
     host: str = "0.0.0.0"
@@ -70,6 +75,20 @@ class Settings(BaseSettings):
 
     class Config:
         env_prefix = "ORCHESTRATOR_"
+        env_file = ".env"
+        case_sensitive = False
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Support Docker secrets via _FILE suffix
+        for field_name in self.model_fields.keys():
+            env_var = f"{self.Config.env_prefix}{field_name.upper()}_FILE"
+            if os.getenv(env_var):
+                try:
+                    with open(os.getenv(env_var), 'r') as f:
+                        setattr(self, field_name, f.read().strip())
+                except Exception as e:
+                    pass
 
 
 @lru_cache()

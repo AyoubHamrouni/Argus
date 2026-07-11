@@ -7,6 +7,7 @@ Mission: OPERATION TEST-FORTRESS
 Date: 2025-10-22
 """
 
+import os
 import pytest
 import sys
 from pathlib import Path
@@ -152,38 +153,47 @@ class TestOllamaClient:
 class TestAlertTriageEndpoints:
     """Test FastAPI endpoints"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run alert triage endpoint tests"
+    )
     async def test_health_endpoint(self, http_client, alert_triage_url):
         """Test /health endpoint"""
-        try:
-            response = await http_client.get(f"{alert_triage_url}/health")
-            if response.status_code == 200:
-                data = response.json()
-                assert "status" in data
-                assert "service" in data
-                assert data["service"] == "Alert Triage Service"
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        response = await http_client.get(f"{alert_triage_url}/health")
+        if response.status_code == 200:
+            data = response.json()
+            assert "status" in data
+            assert "service" in data
+            assert data["service"] == "Alert Triage Service"
+        else:
+            pytest.fail(f"Alert triage health check failed with status {response.status_code}")
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run alert triage endpoint tests"
+    )
     async def test_metrics_endpoint(self, http_client, alert_triage_url):
         """Test /metrics endpoint"""
-        try:
-            response = await http_client.get(f"{alert_triage_url}/metrics")
-            if response.status_code == 200:
-                # Prometheus metrics should be in text format
-                assert response.headers["content-type"].startswith("text/plain")
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        response = await http_client.get(f"{alert_triage_url}/metrics")
+        if response.status_code == 200:
+            # Prometheus metrics should be in text format
+            assert response.headers["content-type"].startswith("text/plain")
+        else:
+            pytest.fail(f"Metrics endpoint failed with status {response.status_code}")
 
+    @pytest.mark.skipif(
+        not os.getenv("ALERT_TRIAGE_URL"),
+        reason="Set ALERT_TRIAGE_URL to run alert triage endpoint tests"
+    )
     async def test_root_endpoint(self, http_client, alert_triage_url):
         """Test root / endpoint"""
-        try:
-            response = await http_client.get(f"{alert_triage_url}/")
-            if response.status_code == 200:
-                data = response.json()
-                assert "service" in data
-                assert "endpoints" in data
-        except Exception as e:
-            pytest.skip(f"Service not running: {e}")
+        response = await http_client.get(f"{alert_triage_url}/")
+        if response.status_code == 200:
+            data = response.json()
+            assert "service" in data
+            assert "endpoints" in data
+        else:
+            pytest.fail(f"Root endpoint failed with status {response.status_code}")
 
 
 # ============================================================================

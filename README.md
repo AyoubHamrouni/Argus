@@ -1,11 +1,13 @@
 # AI-Augmented Security Operations Center
 
-Local AI services, machine-learning intrusion detection, alert enrichment, attack-campaign simulation, and response planning for security operations research.
+Local AI services, machine-learning intrusion detection, alert enrichment, attack-campaign simulation, and response planning for security operations.
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Docker Compose](https://img.shields.io/badge/docker-compose-blue.svg)](https://docs.docker.com/compose/)
 [![Dataset: CICIDS2017](https://img.shields.io/badge/dataset-CICIDS2017-green.svg)](datasets/CICIDS2017/README.md)
+[![CI](https://github.com/zhadyz/AI_SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/zhadyz/AI_SOC/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/zhadyz/AI_SOC/branch/main/graph/badge.svg)](https://codecov.io/gh/zhadyz/AI_SOC)
 
 AI-SOC is a research-grade implementation of an AI-assisted security operations center. It combines trained IDS models, local LLM alert triage, retrieval over security knowledge, Wazuh integration, incident correlation, swarm-scale attack simulation, and a prototype response orchestrator.
 
@@ -44,7 +46,6 @@ This is not a drop-in production SOC. It is a substantial research implementatio
 | Response orchestrator | Prototype implemented | D3FEND mapping, plan generation, approval tiers, execution workflow, verification loop. |
 | Firewall, EDR, identity adapters | Stubbed | Interfaces exist; production vendor adapters still need real API implementations. |
 | Full deployment script | Implemented | `deploy-ai-soc.sh` and `deploy-ai-soc.ps1` orchestrate SIEM, AI services, and monitoring. |
-| `docker-compose/integrated-stack.yml` | Experimental/stale | References gateway/webhook services that are not present in this checkout; use the compose files listed below. |
 
 ## Architecture
 
@@ -134,8 +135,11 @@ flowchart TB
 |-- ml_training/                 CICIDS2017 training and inference API
 |-- models/                      Trained model and preprocessing artifacts
 |-- config/                      Wazuh, Grafana, Prometheus, simulation configs
-|-- docs/                        MkDocs documentation site content
+|-- docs/                        Documentation site content
 |-- datasets/                    Dataset notes, validation, checksums
+|-- k8s/ai-services/             Kubernetes manifests (AI services only)
+|-- terraform/                   Multi-cloud infrastructure (AWS, Azure, GCP)
+|-- alembic/                     Database migration scripts
 `-- tests/                       Unit, integration, security, browser, load scaffolding
 ```
 
@@ -235,7 +239,7 @@ Default credentials in local compose files are for development only. Change `.en
 ### Analyze a security alert
 
 ```bash
-curl -X POST http://localhost:8100/analyze \
+curl -X POST http://localhost:8100/api/v1/triage/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "alert_id": "test-001",
@@ -305,7 +309,7 @@ The all-zero vector is only a smoke-test payload. Real predictions should use th
 ### Retrieve knowledge-base context
 
 ```bash
-curl -X POST http://localhost:8300/retrieve \
+curl -X POST http://localhost:8300/api/v1/rag/retrieve \
   -H "Content-Type: application/json" \
   -d '{
     "query": "credential dumping LSASS memory",
@@ -317,7 +321,7 @@ curl -X POST http://localhost:8300/retrieve \
 ### Submit analyst feedback
 
 ```bash
-curl -X POST http://localhost:8400/feedback/test-001 \
+curl -X POST http://localhost:8400/api/v1/feedback/feedback/test-001 \
   -H "Content-Type: application/json" \
   -d '{
     "analyst_id": "analyst1",
@@ -330,30 +334,30 @@ curl -X POST http://localhost:8400/feedback/test-001 \
 ### Correlate alerts and inspect incidents
 
 ```bash
-curl http://localhost:8600/incidents
-curl http://localhost:8600/predict/reconnaissance
+curl http://localhost:8600/api/v1/correlation/incidents
+curl http://localhost:8600/api/v1/correlation/predict/reconnaissance
 ```
 
 ### Run attack-campaign simulation
 
 ```bash
 # Single campaign
-curl -X POST "http://localhost:8600/simulate?timesteps=3"
+curl -X POST "http://localhost:8600/api/v1/correlation/simulate?timesteps=3"
 
 # Swarm simulation
-curl -X POST "http://localhost:8600/simulate/swarm/start?swarm_size=100&monte_carlo_runs=5&timesteps=6"
+curl -X POST "http://localhost:8600/api/v1/correlation/simulate/swarm/start?swarm_size=100&monte_carlo_runs=5&timesteps=6"
 
 # Poll status
-curl "http://localhost:8600/simulate/swarm/SWARM-ID/status"
+curl "http://localhost:8600/api/v1/correlation/simulate/swarm/SWARM-ID/status"
 
 # Fetch result
-curl "http://localhost:8600/simulate/swarm/SWARM-ID/result"
+curl "http://localhost:8600/api/v1/correlation/simulate/swarm/SWARM-ID/result"
 ```
 
 ### Trigger response planning
 
 ```bash
-curl -X POST http://localhost:8800/defend \
+curl -X POST http://localhost:8800/api/v1/response/defend \
   -H "Content-Type: application/json" \
   -d '{
     "incident_id": "INC-20250324-ab12",
@@ -387,9 +391,9 @@ Training and deployment notes:
 
 - [ml_training/README.md](ml_training/README.md)
 - [ml_training/inference_api.py](ml_training/inference_api.py)
-- [docs/experiments/ml-performance.md](docs/experiments/ml-performance.md)
+- [docs/ml-models.md](docs/ml-models.md)
 
-## Swarm Simulation Research
+## Swarm Simulation
 
 The correlation engine includes a research prototype for multi-agent attack-campaign simulation:
 
@@ -399,22 +403,18 @@ The correlation engine includes a research prototype for multi-agent attack-camp
 - Environment randomization for defense and vulnerability uncertainty
 - Host risk heatmaps, attack-path frequencies, confidence intervals, and defense-effectiveness summaries
 
-Experiment artifacts are stored under:
+Experiment artifacts are stored under `services/correlation-engine/experiments_v3/`.
 
-- `services/correlation-engine/experiments_v3/`
-- `services/correlation-engine/paper_draft.md`
-
-Key reported findings from the included experiment artifacts:
-
-| Finding | Reported Result |
+| Finding | Result |
 |---|---|
 | Total agent runs | 37,575 |
 | Unique attack paths discovered | 18 |
-| Model-scale effect | 14B model found more unique paths than 3B in the reported runs |
+| Model-scale effect | 14B model found more unique paths than 3B |
 | Defender impact | 44% overall reduction in compromise, 93% reduction on monitored hosts |
-| Simulation limitation | Results are directional research evidence, not validated forecasts of real-world breach probability. |
 
 The simulator is useful for prioritization, research, and what-if analysis. It should not be treated as a replacement for penetration testing, adversary emulation, or production risk scoring without additional validation.
+
+See [docs/swarm-simulation.md](docs/swarm-simulation.md) for details.
 
 ## Response Orchestration
 
@@ -455,23 +455,8 @@ Run the full suite:
 pytest tests/
 ```
 
-Run the structural validator:
-
-```bash
-PYTHONIOENCODING=utf-8 python tests/validate_tests.py
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:PYTHONIOENCODING = "utf-8"
-python tests\validate_tests.py
-```
-
 Current testing notes:
 
-- Some tests and CI snippets still assume 78 ML features, while the current API and artifacts use 77.
-- CI workflow steps currently use permissive `|| true` patterns in several places; tighten these before treating CI as a release gate.
 - Browser, load, and integration tests require the relevant local services to be running.
 
 ## Security Notes
@@ -483,16 +468,12 @@ Before production-like use:
 - Replace every default password in `.env`
 - Keep `.env`, generated certificates, and credentials out of git
 - Enable TLS where services communicate across hosts
-- Add API authentication to exposed service endpoints
 - Review container network boundaries and host-network sensor settings
 - Replace response-action stubs with audited vendor integrations
 - Validate LLM output before using it for automated action
 - Treat ML predictions from alert metadata as low confidence unless full 77-feature flow data is present
 
-The repository includes additional guidance in:
-
-- [docs/security/guide.md](docs/security/guide.md)
-- [docs/security/baseline.md](docs/security/baseline.md)
+See [docs/security.md](docs/security.md) for the full security guide.
 
 ## Known Gaps
 
@@ -500,96 +481,31 @@ The repository includes additional guidance in:
 - Adversarial ML evasion testing has not been completed.
 - The ML model is binary only; multi-class attack labeling remains future work.
 - Simulator results have not been benchmarked against real red-team outcomes.
-- Some service-level README files lag behind the current implementation status.
-- `docker-compose/integrated-stack.yml` is not the canonical deployment path in this checkout.
 - Feedback-loop protection against bad or malicious labels is not implemented.
 - Longitudinal evidence for retraining improvement requires operational data over time.
-
-## Roadmap
-
-- Align all tests and CI around the current 77-feature model contract
-- Replace stubbed response adapters with real pfSense, CrowdStrike, Microsoft Defender, or identity-provider integrations
-- Add multi-class IDS classification
-- Add adversarial robustness evaluation
-- Add graph-based incident correlation
-- Auto-populate simulation environments from Wazuh inventory and vulnerability data
-- Validate simulator predictions against controlled adversary-emulation exercises
-- Add stronger feedback-label validation before model retraining
 
 ## Documentation
 
 | Topic | Link |
 |---|---|
-| Quickstart | [docs/getting-started/quickstart.md](docs/getting-started/quickstart.md) |
-| Installation | [docs/getting-started/installation.md](docs/getting-started/installation.md) |
-| Architecture overview | [docs/architecture/overview.md](docs/architecture/overview.md) |
-| Deployment guide | [docs/deployment/guide.md](docs/deployment/guide.md) |
-| Wazuh integration | [docs/WAZUH_INTEGRATION_GUIDE.md](docs/WAZUH_INTEGRATION_GUIDE.md) |
-| ML accuracy | [docs/ai-soc/ml-accuracy.md](docs/ai-soc/ml-accuracy.md) |
-| API docs | [docs/api/ml-inference.md](docs/api/ml-inference.md) |
-| Research context | [docs/research/context.md](docs/research/context.md) |
+| Getting Started | [docs/getting-started.md](docs/getting-started.md) |
+| Architecture | [docs/architecture.md](docs/architecture.md) |
+| Services | [docs/services.md](docs/services.md) |
+| API Reference | [docs/api-reference.md](docs/api-reference.md) |
+| ML Models | [docs/ml-models.md](docs/ml-models.md) |
+| Deployment | [docs/deployment.md](docs/deployment.md) |
+| Configuration | [docs/configuration.md](docs/configuration.md) |
+| Security | [docs/security.md](docs/security.md) |
+| Swarm Simulation | [docs/swarm-simulation.md](docs/swarm-simulation.md) |
+| Development | [docs/development.md](docs/development.md) |
 
-Published documentation is referenced in the project as `research.onyxlab.ai`; local docs can be served with MkDocs:
+To serve the documentation locally:
 
 ```bash
 pip install mkdocs mkdocs-material
 mkdocs serve
 ```
 
-## Research Context
-
-This implementation builds on the survey paper:
-
-**AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation**
-
-Srinivas, S., Kirk, B., Zendejas, J., Espino, M., Boskovich, M., Bari, A., Dajani, K., and Alzahrani, N.
-
-Informatics, vol. 5, no. 4, article 95, 2025.
-
-The platform implements and tests several themes from that work:
-
-- Human-AI collaboration rather than blind automation
-- Alert triage and summarization using local LLMs
-- Threat-intelligence grounding through retrieval
-- Feedback loops for analyst correction
-- Practical friction in connecting AI services to existing SIEM infrastructure
-
-## Citation
-
-```bibtex
-@misc{aisoc2025,
-  title        = {AI-Augmented Security Operations Center: A Research Implementation},
-  author       = {Bari, Abdul},
-  institution  = {California State University, San Bernardino},
-  year         = {2025},
-  note         = {Research implementation of ML, LLM, RAG, simulation, and response-planning workflows for security operations},
-  url          = {https://github.com/zhadyz/AI_SOC}
-}
-```
-
-```bibtex
-@article{srinivas2025aiaugsoc,
-  title        = {AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation},
-  author       = {Srinivas, Siddhant and Kirk, Brandon and Zendejas, Julissa and
-                  Espino, Michael and Boskovich, Matthew and Bari, Abdul and
-                  Dajani, Khalil and Alzahrani, Nabeel},
-  journal      = {Informatics},
-  volume       = {5},
-  number       = {4},
-  article      = {95},
-  year         = {2025},
-  publisher    = {MDPI}
-}
-```
-
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
-
-## Author
-
-Abdul Bari
-
-California State University, San Bernardino
-
-Contact: z@onyxlab.ai

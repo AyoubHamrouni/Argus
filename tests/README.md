@@ -1,6 +1,5 @@
 # AI-SOC Testing Framework
 
-**Author:** Abdul Bari
 **Date:** 2025-10-22
 
 Comprehensive testing infrastructure for the AI-Augmented Security Operations Center.
@@ -509,4 +508,4 @@ bandit -r services/
 
 ---
 
-**AI-SOC Research Team — California State University, San Bernardino**
+**AI-SOC Project**

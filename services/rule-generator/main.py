@@ -17,10 +17,31 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends, APIRouter
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, generate_latest
 from starlette.responses import Response
+import os
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
+from services.common.tracing import init_tracing, instrument_app, instrument_httpx
+
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    api_key_enabled = os.getenv("RULES_API_KEY_ENABLED", "true").lower() == "true"
+    if not api_key_enabled:
+        return True
+    api_key = os.getenv("RULES_API_KEY", "")
+    if not credentials or credentials.credentials != api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
 
 logging.basicConfig(
     level="INFO",
@@ -72,7 +93,20 @@ class GeneratedRule(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Rule Generator Service")
+
+    # Initialize OpenTelemetry tracing
+    init_tracing("rule-generator")
+    instrument_app(app, "rule-generator")
+    instrument_httpx()
+
+    # Initialize Redis cache
+    import os
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
+
+    await close_redis()
     logger.info("Shutting down Rule Generator Service")
 
 
@@ -81,7 +115,21 @@ app = FastAPI(
     description="AI-generated Sigma detection rules from novel attack patterns",
     version="1.0.0",
     lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)],
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(RateLimitMiddleware)
+
+router = APIRouter(prefix="/api/v1/rules", tags=["v1"])
+app.include_router(router)
 
 
 # --- LLM Rule Generation ---
@@ -234,7 +282,7 @@ def _extract_rule_keywords(rule_text: str) -> List[str]:
 
 # --- Endpoints ---
 
-@app.post("/generate")
+@router.post("/generate")
 async def generate_rule(request: RuleGenerationRequest):
     """
     Generate a Sigma detection rule from an attack pattern using the LLM.
@@ -289,7 +337,7 @@ async def generate_rule(request: RuleGenerationRequest):
     }
 
 
-@app.get("/rules")
+@router.get("/rules")
 async def list_rules(
     status: Optional[str] = Query(None, description="Filter by status"),
 ):
@@ -300,14 +348,14 @@ async def list_rules(
     return {"total": len(rules), "rules": rules}
 
 
-@app.get("/rules/pending")
+@router.get("/rules/pending")
 async def pending_rules():
     """Get rules pending analyst approval."""
     pending = [r for r in rules_store.values() if r.get("status") == "pending"]
     return {"total": len(pending), "rules": pending}
 
 
-@app.put("/rules/{rule_id}/approve")
+@router.put("/rules/{rule_id}/approve")
 async def approve_rule(rule_id: str, notes: Optional[str] = None):
     """Approve a generated rule for deployment."""
     if rule_id not in rules_store:
@@ -318,7 +366,7 @@ async def approve_rule(rule_id: str, notes: Optional[str] = None):
     return rules_store[rule_id]
 
 
-@app.put("/rules/{rule_id}/reject")
+@router.put("/rules/{rule_id}/reject")
 async def reject_rule(rule_id: str, notes: Optional[str] = None):
     """Reject a generated rule."""
     if rule_id not in rules_store:

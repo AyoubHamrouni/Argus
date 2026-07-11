@@ -253,6 +253,20 @@ class ResponseOrchestrator:
         self, plan: DefensePlan, action: PlannedAction
     ) -> AdapterResult:
         """Execute a single defense action via its adapter."""
+        # Security Guardrail: Explicit HITL verification
+        if action.requires_approval and action.status != ActionStatus.APPROVED:
+            action.status = ActionStatus.FAILED
+            action.error_message = "Execution rejected: explicit human approval is required but not found in state."
+            logger.error(f"Action {action.action_id} failed HITL verification.")
+            return AdapterResult(
+                success=False,
+                action_type=action.action_type.value,
+                target=action.target,
+                adapter=action.adapter.value,
+                detail=action.error_message,
+                error=action.error_message,
+            )
+
         adapter = self._adapters.get(action.adapter.value)
         if not adapter:
             action.status = ActionStatus.FAILED
@@ -319,6 +333,7 @@ class ResponseOrchestrator:
 
         if approved:
             plan.human_approved_count += 1
+            action.status = ActionStatus.APPROVED
             result = await self._execute_action(plan, action)
             if not result.success:
                 logger.error(

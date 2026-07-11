@@ -11,7 +11,7 @@ import logging
 from typing import Optional, Dict, Any
 import httpx
 from config import settings
-from models import SecurityAlert, TriageResponse, SeverityLevel, AlertCategory, IOC, TriageRecommendation
+from models import SecurityAlert, TriageResponse, SeverityLevel, AlertCategory, IOC, TriageRecommendation, RAGSource
 from ml_client import MLInferenceClient, MLPrediction, enrich_llm_prompt_with_ml
 from context_manager import ContextManager
 
@@ -99,6 +99,56 @@ class OllamaClient:
             logger.error(f"Ollama health check failed: {e}")
             return False
 
+    async def get_rag_context(self, alert: SecurityAlert) -> tuple[str, list[RAGSource]]:
+        """Query RAG service for relevant context based on alert details."""
+        if not settings.rag_enabled or not settings.rag_service_url:
+            return "", []
+
+        query = f"{alert.rule_description} "
+        if alert.mitre_technique:
+            query += " ".join(alert.mitre_technique)
+        
+        sources = []
+        context_str = ""
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    f"{settings.rag_service_url}/retrieve",
+                    json={
+                        "query": query,
+                        "collection": "mitre_attack",
+                        "top_k": settings.rag_top_k,
+                        "min_similarity": 0.6
+                    }
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    results = data.get("results", [])
+                    if results:
+                        context_str = "**KNOWLEDGE BASE (RAG):**\n"
+                        for res in results:
+                            doc = res.get("document", "")
+                            meta = res.get("metadata", {})
+                            sim = res.get("similarity_score", 0.0)
+                            
+                            ref_id = meta.get("technique_id") or meta.get("id") or "Unknown"
+                            url = meta.get("url")
+                            
+                            context_str += f"- [{ref_id}] {doc[:300]}...\n"
+                            
+                            sources.append(RAGSource(
+                                source_type="mitre_attack",
+                                reference_id=ref_id,
+                                snippet=doc[:500],
+                                similarity_score=sim,
+                                url=url
+                            ))
+        except Exception as e:
+            logger.error(f"RAG fetch failed: {e}")
+
+        return context_str, sources
+
     def _build_triage_prompt(
         self,
         alert: SecurityAlert,
@@ -126,10 +176,47 @@ class OllamaClient:
         if context:
             context_section = f"\n\n**ANALYST CONTEXT (use to inform your assessment):**\n{context}\n\n---\n"
 
+        # Build business-context asset risk block with explicit escalation rules
+        asset_tag = alert.asset_criticality.value if alert.asset_criticality else "unknown"
+        asset_escalation_rules = {
+            "critical_infrastructure":
+                "⚠️ CRITICAL INFRASTRUCTURE asset. ANY anomaly — even low rule-level — MUST be assessed as "
+                "at minimum HIGH severity. False negatives here could affect national-level services.",
+            "production_database":
+                "⚠️ PRODUCTION DATABASE asset. Exfiltration, privilege escalation, or access anomalies "
+                "MUST be rated CRITICAL. Any other finding is at minimum HIGH.",
+            "production_api":
+                "⚠️ PRODUCTION API asset. Auth failures, injection attempts, or rate anomalies MUST be "
+                "rated HIGH or above. Treat as HIGH unless strong evidence of false positive.",
+            "payment_system":
+                "⚠️ PAYMENT SYSTEM asset. PCI-DSS scope. ANY alert on this asset MUST be rated HIGH or "
+                "CRITICAL. Treat every finding as a potential compliance breach until proven otherwise.",
+            "identity_provider":
+                "⚠️ IDENTITY PROVIDER asset (e.g., AD, LDAP, SSO). Credential access, enumeration, or "
+                "auth failures MUST be rated CRITICAL. A compromised IdP means full domain compromise.",
+            "staging_environment":
+                "ℹ️ STAGING ENVIRONMENT asset. Apply normal severity rules. Flag if staging data "
+                "resembles production PII — that itself is a HIGH severity finding.",
+            "development_sandbox":
+                "ℹ️ DEVELOPMENT SANDBOX asset. Lower business risk. You may rate alerts one severity "
+                "level lower than you otherwise would, unless the attack crosses network boundaries.",
+            "critical": "⚠️ CRITICAL tier asset. Weight severity toward HIGH or CRITICAL.",
+            "high": "⚠️ HIGH tier asset. Do not downgrade severity below MEDIUM.",
+            "medium": "ℹ️ MEDIUM tier asset. Apply standard severity assessment.",
+            "low": "ℹ️ LOW tier asset. Apply standard severity; false positive threshold is higher.",
+            "unknown": "ℹ️ Asset criticality unknown. Apply standard severity assessment.",
+        }
+        escalation_rule = asset_escalation_rules.get(asset_tag, asset_escalation_rules["unknown"])
+        asset_context_section = f"""
+**ASSET RISK CONTEXT (MANDATORY — apply before assigning severity):**
+- Asset Criticality Tag: `{asset_tag}`
+- Rule: {escalation_rule}
+"""
+
         prompt = f"""You are an expert cybersecurity analyst performing alert triage for a Security Operations Center (SOC).
 
 **TASK:** Analyze the following security alert and provide a structured assessment.
-{context_section}
+{context_section}{asset_context_section}
 **ALERT DETAILS:**
 - Alert ID: {alert.alert_id}
 - Rule: {alert.rule_description} (Level {alert.rule_level})
@@ -138,10 +225,11 @@ class OllamaClient:
 - Destination IP: {alert.dest_ip or 'N/A'}
 - User: {alert.user or 'N/A'}
 - Process: {alert.process or 'N/A'}
+- Asset Criticality: {asset_tag}
 - Raw Log: {alert.raw_log or 'N/A'}
 
 **YOUR ANALYSIS MUST INCLUDE:**
-1. **Severity Assessment:** Classify as critical/high/medium/low/informational
+1. **Severity Assessment:** Classify as critical/high/medium/low/informational. You MUST apply the ASSET RISK CONTEXT rules above before finalizing severity.
 2. **Category:** Identify attack category (malware, intrusion, exfiltration, etc)
 3. **True/False Positive:** Determine if this is a genuine threat
 4. **IOC Extraction:** Extract all Indicators of Compromise (IPs, domains, hashes, files)
@@ -154,6 +242,7 @@ class OllamaClient:
 - Do NOT hallucinate IOCs or details not present in the log
 - Provide confidence score (0.0-1.0) for your assessment
 - Be concise but thorough
+- Asset criticality OVERRIDES raw rule_level when they conflict
 
 **OUTPUT FORMAT (JSON):**
 {{
@@ -291,7 +380,8 @@ Begin your analysis now:"""
                 ],
                 investigation_priority=int(parsed.get("investigation_priority", 3)),
                 estimated_analyst_time=parsed.get("estimated_analyst_time"),
-                model_used=model_used
+                model_used=model_used,
+                rag_sources=getattr(alert, "_rag_sources", None)
             )
 
             return response
@@ -335,6 +425,13 @@ Begin your analysis now:"""
 
         # Step 2: Fetch contextual memory and inject into base prompt
         context_block = await self.context_manager.build_context(alert)
+        
+        # Step 2.5: Fetch RAG context and inject
+        rag_context, rag_sources = await self.get_rag_context(alert)
+        if rag_context:
+            context_block += "\n\n" + rag_context
+            alert._rag_sources = rag_sources # attach temporarily so parser can find it
+
         base_prompt = self._build_triage_prompt(alert, context=context_block)
 
         # Step 3: Enrich with ML prediction signal
@@ -381,9 +478,3 @@ Begin your analysis now:"""
         return None
 
 
-# TODO: Week 5 - Add RAG integration
-# class RAGEnhancedClient(OllamaClient):
-#     """Extended client with RAG capabilities"""
-#     async def get_rag_context(self, alert: SecurityAlert) -> str:
-#         """Query RAG service for relevant context"""
-#         pass

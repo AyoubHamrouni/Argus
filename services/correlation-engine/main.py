@@ -8,15 +8,17 @@ temporal proximity, and MITRE ATT&CK kill chain progression.
 
 import logging
 import time
+import json as _json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from typing import Dict, Optional
-from fastapi import FastAPI, HTTPException, Query, Depends, Request, status
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request, status
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from sqlalchemy import select, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response
 
@@ -54,6 +56,9 @@ from swarm import SwarmSimulator, SwarmConfig
 from history_store import HistoryStore
 from research_metrics import compute_all_metrics, export_for_paper, prediction_accuracy
 import asyncio
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
+from services.common.tracing import init_tracing, instrument_app, instrument_httpx
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -101,6 +106,11 @@ async def lifespan(app: FastAPI):
         "Starting %s v%s", settings.service_name, settings.service_version
     )
 
+    # Initialize OpenTelemetry tracing
+    init_tracing("correlation-engine")
+    instrument_app(app, "correlation-engine")
+    instrument_httpx()
+
     try:
         await create_db_pool(settings.database_url)
         logger.info("Database pool initialised successfully")
@@ -111,6 +121,8 @@ async def lifespan(app: FastAPI):
             async for db in get_db():
                 await predictor.train(db)
                 break
+        except SQLAlchemyError as e:
+            logger.warning("Predictor training skipped due to database error: %s", e)
         except Exception as e:
             logger.warning("Predictor training skipped: %s", e)
         app.state.predictor = predictor
@@ -139,8 +151,13 @@ async def lifespan(app: FastAPI):
     app.state.history_store = HistoryStore(data_dir=history_dir)
     logger.info("Swarm store and history initialized")
 
+    # Initialize Redis cache
+    redis_url = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
 
+    await close_redis()
     logger.info("Shutting down %s", settings.service_name)
     await close_db_pool()
 
@@ -159,6 +176,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RateLimitMiddleware)
+
+# ---------------------------------------------------------------------------
+# Helpers
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -225,6 +246,14 @@ async def _trigger_defense(incident_id: str, severity: str, is_new: bool):
             "Response orchestrator not available — defense trigger skipped for %s",
             incident_id,
         )
+    except httpx.TimeoutException:
+        logger.warning(
+            "Defense trigger timed out for %s", incident_id,
+        )
+    except httpx.HTTPStatusError as exc:
+        logger.warning(
+            "Defense trigger HTTP error for %s: %s", incident_id, exc,
+        )
     except Exception as exc:
         logger.warning(
             "Defense trigger failed for %s: %s", incident_id, exc,
@@ -282,7 +311,7 @@ def _incident_model_to_full(
 # ---------------------------------------------------------------------------
 
 
-@app.post(
+@router.post(
     "/correlate",
     response_model=CorrelationResponse,
     status_code=status.HTTP_200_OK,
@@ -340,6 +369,16 @@ async def correlate_alert(
 
         return result
 
+    except SQLAlchemyError as exc:
+        CORRELATION_REQUESTS.labels(status="error").inc()
+        logger.error(
+            "Correlation database error for alert %s: %s", request.alert_id, exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Correlation database error: {str(exc)}",
+        )
     except Exception as exc:
         CORRELATION_REQUESTS.labels(status="error").inc()
         logger.error(
@@ -351,7 +390,7 @@ async def correlate_alert(
         )
 
 
-@app.get(
+@router.get(
     "/incidents",
     response_model=List[IncidentSummary],
     summary="List incidents",
@@ -388,6 +427,12 @@ async def list_incidents(
 
     except HTTPException:
         raise
+    except SQLAlchemyError as exc:
+        logger.error("Database error listing incidents: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve incidents: {str(exc)}",
+        )
     except Exception as exc:
         logger.error("Failed to list incidents: %s", exc)
         raise HTTPException(
@@ -396,7 +441,7 @@ async def list_incidents(
         )
 
 
-@app.get(
+@router.get(
     "/incidents/active",
     response_model=List[IncidentSummary],
     summary="List active incidents",
@@ -415,6 +460,12 @@ async def list_active_incidents(
         rows = result.scalars().all()
         return [_incident_model_to_summary(row) for row in rows]
 
+    except SQLAlchemyError as exc:
+        logger.error("Database error listing active incidents: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve active incidents: {str(exc)}",
+        )
     except Exception as exc:
         logger.error("Failed to list active incidents: %s", exc)
         raise HTTPException(
@@ -423,7 +474,7 @@ async def list_active_incidents(
         )
 
 
-@app.get(
+@router.get(
     "/incidents/{incident_id}",
     response_model=Incident,
     summary="Get incident details",
@@ -463,6 +514,12 @@ async def get_incident(
 
     except HTTPException:
         raise
+    except SQLAlchemyError as exc:
+        logger.error("Database error getting incident %s: %s", incident_id, exc, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve incident: {str(exc)}",
+        )
     except Exception as exc:
         logger.error("Failed to get incident %s: %s", incident_id, exc)
         raise HTTPException(
@@ -471,7 +528,7 @@ async def get_incident(
         )
 
 
-@app.put(
+@router.put(
     "/incidents/{incident_id}/status",
     response_model=IncidentSummary,
     summary="Update incident status",
@@ -535,6 +592,15 @@ async def update_incident_status(
 
     except HTTPException:
         raise
+    except SQLAlchemyError as exc:
+        logger.error(
+            "Database error updating incident %s status: %s", incident_id, exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update incident status: {str(exc)}",
+        )
     except Exception as exc:
         logger.error(
             "Failed to update incident %s status: %s", incident_id, exc
@@ -545,7 +611,7 @@ async def update_incident_status(
         )
 
 
-@app.post("/simulate")
+@router.post("/simulate")
 async def run_simulation(
     archetypes: Optional[List[str]] = None,
     timesteps: int = Query(3, ge=1, le=10),
@@ -587,7 +653,12 @@ async def run_simulation(
                     "Pass environment_json in the request body or set "
                     "CORRELATION_SIMULATOR_ENVIRONMENT_CONFIG."
                 )
+    except HTTPException:
+        raise
+    except (_json.JSONDecodeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=f"Invalid environment JSON: {e}")
     except Exception as e:
+        logger.error("Failed to load environment for simulation: %s", e, exc_info=True)
         raise HTTPException(status_code=400, detail=f"Failed to load environment: {e}")
 
     simulator = CampaignSimulator(config)
@@ -604,8 +675,11 @@ async def run_simulation(
                 store.popitem(last=False)
 
         return report
+    except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException) as e:
+        logger.error("Simulation LLM service error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=f"Simulation LLM service error: {e}")
     except Exception as e:
-        logger.error(f"Simulation failed: {e}", exc_info=True)
+        logger.error("Simulation failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Simulation failed: {e}")
 
 
@@ -619,7 +693,7 @@ class ChatMessage(BaseModel):
     message: str
 
 
-@app.post("/simulate/{simulation_id}/chat")
+@router.post("/simulate/{simulation_id}/chat")
 async def chat_with_attacker(simulation_id: str, body: ChatMessage):
     """
     Chat with an attacker agent from a completed simulation.
@@ -704,10 +778,15 @@ async def chat_with_attacker(simulation_id: str, body: ChatMessage):
                 )
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="LLM request timed out")
+    except httpx.HTTPStatusError as e:
+        logger.error("Ollama chat HTTP error: status=%d", e.response.status_code)
+        raise HTTPException(
+            status_code=502, detail="LLM service returned an error"
+        )
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Chat failed: %s", e)
+        logger.error("Chat failed: %s", e, exc_info=True)
         raise HTTPException(status_code=502, detail=f"Failed to reach LLM: {e}")
 
     # Store conversation
@@ -852,7 +931,7 @@ def _build_defender_chat_prompt(
     )
 
 
-@app.post("/simulate/generate-dataset")
+@router.post("/simulate/generate-dataset")
 async def generate_dataset(
     runs: int = Query(10, ge=1, le=500, description="Number of simulation runs"),
     timesteps: int = Query(3, ge=1, le=10, description="Timesteps per run"),
@@ -873,13 +952,11 @@ async def generate_dataset(
         if environment_json:
             base_env_dict = environment_json
         elif settings.simulator_environment_config:
-            import json as _json
             with open(settings.simulator_environment_config) as fh:
                 base_env_dict = _json.load(fh)
         else:
             default_path = "/app/config/simulation/default-environment.json"
             try:
-                import json as _json
                 with open(default_path) as fh:
                     base_env_dict = _json.load(fh)
             except FileNotFoundError:
@@ -891,7 +968,14 @@ async def generate_dataset(
                 )
     except HTTPException:
         raise
+    except (FileNotFoundError, OSError) as exc:
+        logger.error("Environment config file not found: %s", exc)
+        raise HTTPException(status_code=400, detail=f"Environment config file not found: {exc}")
+    except (_json.JSONDecodeError, ValueError) as exc:
+        logger.error("Invalid environment JSON: %s", exc)
+        raise HTTPException(status_code=400, detail=f"Invalid environment JSON: {exc}")
     except Exception as exc:
+        logger.error("Failed to load environment for dataset generation: %s", exc, exc_info=True)
         raise HTTPException(status_code=400, detail=f"Failed to load environment: {exc}")
 
     generator = DatasetGenerator(
@@ -907,8 +991,12 @@ async def generate_dataset(
             timesteps=timesteps,
         )
         return dataset
+    except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException) as exc:
+        logger.error("Dataset generation LLM service error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=502, detail=f"Dataset generation LLM service error: {exc}")
     except Exception as exc:
         logger.error("Dataset generation failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Dataset generation failed: {exc}")
         raise HTTPException(status_code=500, detail=f"Dataset generation failed: {exc}")
 
 
@@ -917,7 +1005,7 @@ async def generate_dataset(
 # ---------------------------------------------------------------------------
 
 
-@app.post("/simulate/swarm/start")
+@router.post("/simulate/swarm/start")
 async def start_swarm_simulation(
     swarm_size: int = Query(50, ge=10, le=1000),
     monte_carlo_runs: int = Query(10, ge=1, le=100),
@@ -952,6 +1040,7 @@ async def start_swarm_simulation(
     except HTTPException:
         raise
     except Exception as exc:
+        logger.error("Failed to load environment for swarm simulation: %s", exc, exc_info=True)
         raise HTTPException(status_code=400, detail=f"Failed to load environment: {exc}")
 
     config = SwarmConfig(
@@ -966,8 +1055,6 @@ async def start_swarm_simulation(
     )
 
     simulator = SwarmSimulator(config)
-
-    import asyncio as _asyncio
 
     async def _run_swarm():
         try:
@@ -984,14 +1071,17 @@ async def start_swarm_simulation(
                 hist.append(report, trigger="manual", env_snapshot=env.snapshot())
                 spike = hist.detect_risk_spike()
                 if spike:
-                    logger.warning(f"RISK SPIKE DETECTED: {spike}")
+                    logger.warning("RISK SPIKE DETECTED: %s", spike)
             return report
+        except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException) as e:
+            logger.error("Swarm simulation LLM service error: %s", e, exc_info=True)
+            return {"error": str(e)}
         except Exception as e:
-            logger.error(f"Swarm simulation failed: {e}", exc_info=True)
+            logger.error("Swarm simulation failed: %s", e, exc_info=True)
             return {"error": str(e)}
 
     # Launch as background task
-    task = _asyncio.create_task(_run_swarm())
+    task = asyncio.create_task(_run_swarm())
     swarm_id = f"SWARM-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
     tasks = getattr(app.state, "swarm_tasks", {})
     tasks[swarm_id] = {"task": task, "simulator": simulator}
@@ -1008,7 +1098,7 @@ async def start_swarm_simulation(
     }
 
 
-@app.get("/simulate/swarm/{swarm_id}/status")
+@router.get("/simulate/swarm/{swarm_id}/status")
 async def swarm_status(swarm_id: str):
     """Poll progress of a running swarm simulation."""
     tasks = getattr(app.state, "swarm_tasks", {})
@@ -1035,7 +1125,7 @@ async def swarm_status(swarm_id: str):
     }
 
 
-@app.get("/simulate/swarm/{swarm_id}/result")
+@router.get("/simulate/swarm/{swarm_id}/result")
 async def swarm_result(swarm_id: str):
     """Get the completed swarm simulation report."""
     # Check store first
@@ -1067,7 +1157,7 @@ async def swarm_result(swarm_id: str):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/simulate/swarm/trend")
+@router.get("/simulate/swarm/trend")
 async def swarm_trend(last_n: int = Query(50, ge=1, le=500)):
     """Get time-series swarm results for risk trend visualization."""
     hist = getattr(app.state, "history_store", None)
@@ -1079,7 +1169,7 @@ async def swarm_trend(last_n: int = Query(50, ge=1, le=500)):
     return {"snapshots": snapshots, "spike_alert": spike}
 
 
-@app.get("/simulate/research/metrics")
+@router.get("/simulate/research/metrics")
 async def research_metrics():
     """Compute research paper metrics from stored swarm history."""
     hist = getattr(app.state, "history_store", None)
@@ -1088,7 +1178,7 @@ async def research_metrics():
     return compute_all_metrics(hist)
 
 
-@app.post("/simulate/research/export")
+@router.post("/simulate/research/export")
 async def research_export():
     """Export CSV files for paper figures."""
     hist = getattr(app.state, "history_store", None)
@@ -1098,7 +1188,7 @@ async def research_export():
     return {"exported_files": files, "count": len(files)}
 
 
-@app.post("/simulate/environment/from-wazuh")
+@router.post("/simulate/environment/from-wazuh")
 async def environment_from_wazuh():
     """
     Query the Wazuh Manager API to automatically build an Environment model
@@ -1136,6 +1226,12 @@ async def environment_from_wazuh():
             "segments_built": len(environment.segments),
             "environment": env_dict,
         }
+    except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException) as exc:
+        logger.error("Wazuh API communication failed: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to communicate with Wazuh API: {exc}",
+        )
     except Exception as exc:
         logger.error("Wazuh environment build failed: %s", exc, exc_info=True)
         raise HTTPException(
@@ -1144,7 +1240,7 @@ async def environment_from_wazuh():
         )
 
 
-@app.get("/risk-scores")
+@router.get("/risk-scores")
 async def get_risk_scores(request: Request):
     """
     Return per-host risk scores sorted by risk score descending.
@@ -1160,7 +1256,7 @@ async def get_risk_scores(request: Request):
     return {"hosts": [s.to_dict() for s in scores], "total": len(scores)}
 
 
-@app.get("/risk-scores/{host_ip:path}")
+@router.get("/risk-scores/{host_ip:path}")
 async def get_risk_score_for_host(host_ip: str, request: Request):
     """
     Return detailed risk score for a specific host IP address.
@@ -1177,7 +1273,7 @@ async def get_risk_score_for_host(host_ip: str, request: Request):
     raise HTTPException(status_code=404, detail=f"Host '{host_ip}' not found in risk scores")
 
 
-@app.get("/risk-summary")
+@router.get("/risk-summary")
 async def get_risk_summary(request: Request):
     """
     Overall risk summary with security posture rating (A-F), highest-risk
@@ -1190,7 +1286,7 @@ async def get_risk_summary(request: Request):
     return scorer.get_risk_summary()
 
 
-@app.post("/risk-scores/refresh")
+@router.post("/risk-scores/refresh")
 async def refresh_risk_scores(
     request: Request,
     runs: int = Query(5, ge=1, le=50, description="Number of simulations to run"),
@@ -1224,6 +1320,7 @@ async def refresh_risk_scores(
     except HTTPException:
         raise
     except Exception as exc:
+        logger.error("Failed to load environment for risk score refresh: %s", exc, exc_info=True)
         raise HTTPException(status_code=400, detail=f"Failed to load environment: {exc}")
 
     config = SimulationConfig(
@@ -1256,7 +1353,7 @@ async def refresh_risk_scores(
     return summary
 
 
-@app.get("/predict/{kill_chain_stage}")
+@router.get("/predict/{kill_chain_stage}")
 async def predict_next_stage(kill_chain_stage: str, top_k: int = Query(3, ge=1, le=5)):
     """
     Predict the most likely next kill chain stages from the current stage.
@@ -1276,7 +1373,7 @@ async def predict_next_stage(kill_chain_stage: str, top_k: int = Query(3, ge=1, 
     }
 
 
-@app.post("/predict/retrain")
+@router.post("/predict/retrain")
 async def retrain_predictor(db: AsyncSession = Depends(get_db)):
     """Retrain the predictor from current incident history."""
     predictor = getattr(app.state, "predictor", None)

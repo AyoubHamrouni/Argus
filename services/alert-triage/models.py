@@ -20,6 +20,29 @@ class SeverityLevel(str, Enum):
     INFO = "informational"
 
 
+class AssetCriticality(str, Enum):
+    """
+    Business asset criticality classification.
+
+    Generic tiers (critical/high/medium/low) plus explicit business-context
+    labels for named asset categories. Named tags enable more precise
+    risk-weighted severity escalation in the LLM triage prompt.
+    """
+    # Generic tiers
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    # Named business-context labels
+    CRITICAL_INFRASTRUCTURE = "critical_infrastructure"
+    PRODUCTION_DATABASE = "production_database"
+    PRODUCTION_API = "production_api"
+    PAYMENT_SYSTEM = "payment_system"
+    IDENTITY_PROVIDER = "identity_provider"
+    STAGING_ENVIRONMENT = "staging_environment"
+    DEVELOPMENT_SANDBOX = "development_sandbox"
+
+
 class AlertCategory(str, Enum):
     """Security alert categories"""
     MALWARE = "malware"
@@ -40,6 +63,15 @@ class IOC(BaseModel):
     ioc_type: str = Field(..., description="Type: IP, domain, hash, etc")
     value: str = Field(..., description="IOC value")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score")
+
+
+class RAGSource(BaseModel):
+    """Provenance metadata for RAG-augmented context"""
+    source_type: str = Field(..., description="E.g., mitre_attack, cve, runbook, incident")
+    reference_id: str = Field(..., description="Specific ID, e.g., CVE-2023-1234 or T1110")
+    snippet: str = Field(..., description="The excerpt used for grounding")
+    similarity_score: float = Field(..., description="Confidence score from vector DB")
+    url: Optional[str] = Field(None, description="External reference URL if available")
 
 
 class SecurityAlert(BaseModel):
@@ -78,6 +110,10 @@ class SecurityAlert(BaseModel):
 
     # MITRE ATT&CK
     mitre_technique: Optional[List[str]] = Field(None, description="MITRE ATT&CK technique IDs")
+
+    # Business Context
+    asset_criticality: Optional[AssetCriticality] = Field(None, description="Business asset criticality level")
+    organization_id: Optional[str] = Field(None, description="Tenant/organization identifier for multi-tenancy")
 
     @field_validator('timestamp', mode='before')
     @classmethod
@@ -134,6 +170,7 @@ class TriageResponse(BaseModel):
     # RAG Context (if enabled)
     similar_incidents: Optional[List[str]] = Field(None, description="Similar past incidents")
     knowledge_base_references: Optional[List[str]] = Field(None, description="Relevant KB articles")
+    rag_sources: Optional[List[RAGSource]] = Field(None, description="Explicit provenance tracking for UI display")
 
     # Model Metadata
     model_used: str = Field(..., description="LLM model identifier")

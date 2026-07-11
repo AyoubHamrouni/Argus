@@ -11,8 +11,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException
+import os
+from fastapi import FastAPI, HTTPException, Depends, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from services.common.tracing import init_tracing, instrument_app
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
 
 from vector_store import VectorStore
 from embeddings import EmbeddingEngine
@@ -41,6 +47,10 @@ async def lifespan(app: FastAPI):
 
     logger.info("Starting RAG Service")
 
+    # Initialize OpenTelemetry tracing
+    init_tracing("rag-service")
+    instrument_app(app, "rag-service")
+
     try:
         # Initialize components
         embedding_engine = EmbeddingEngine()
@@ -60,17 +70,61 @@ async def lifespan(app: FastAPI):
         logger.exception(e)
         raise
 
+    # Initialize Redis cache
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
 
+    await close_redis()
     logger.info("Shutting down RAG Service")
 
+# Security
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Enforce API key authentication if enabled."""
+    api_key_enabled = os.getenv("RAG_API_KEY_ENABLED", "true").lower() == "true"
+    if not api_key_enabled:
+        return True
+    api_key = os.getenv("RAG_API_KEY", "")
+    if os.getenv("RAG_API_KEY_FILE"):
+        try:
+            with open(os.getenv("RAG_API_KEY_FILE"), "r") as f:
+                api_key = f.read().strip()
+        except Exception:
+            pass
+    if not credentials or credentials.credentials != api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
 
 app = FastAPI(
     title="RAG Service",
     description="Retrieval-Augmented Generation for security knowledge",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)]
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(RateLimitMiddleware)
+
+# OpenTelemetry Instrumentation
+FastAPIInstrumentor.instrument_app(app)
+
+router = APIRouter(prefix="/api/v1/rag", tags=["v1"])
+app.include_router(router)
 
 
 class RetrievalRequest(BaseModel):
@@ -106,7 +160,7 @@ async def health_check():
     }
 
 
-@app.post("/retrieve", response_model=RetrievalResponse)
+@router.post("/retrieve", response_model=RetrievalResponse)
 async def retrieve_context(request: RetrievalRequest):
     """
     Retrieve relevant context from knowledge base.
@@ -162,7 +216,7 @@ async def retrieve_context(request: RetrievalRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/ingest")
+@router.post("/ingest")
 async def ingest_documents(collection: str, documents: List[Dict[str, Any]]):
     """
     Ingest documents into knowledge base.
@@ -206,7 +260,7 @@ async def ingest_documents(collection: str, documents: List[Dict[str, Any]]):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/collections")
+@router.get("/collections")
 async def list_collections():
     """
     List available knowledge base collections.
@@ -238,7 +292,7 @@ async def list_collections():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/ingest/mitre")
+@router.post("/ingest/mitre")
 async def ingest_mitre():
     """
     Ingest MITRE ATT&CK framework into knowledge base.
@@ -255,7 +309,7 @@ async def ingest_mitre():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/ingest/cve")
+@router.post("/ingest/cve")
 async def ingest_cve(severity: str = "CRITICAL"):
     """
     Ingest CVE vulnerability database from NVD API v2.
@@ -290,7 +344,7 @@ async def ingest_cve(severity: str = "CRITICAL"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/ingest/runbooks")
+@router.post("/ingest/runbooks")
 async def ingest_runbooks(runbooks_dir: Optional[str] = None):
     """
     Ingest security runbooks from markdown files.
@@ -319,7 +373,7 @@ async def ingest_runbooks(runbooks_dir: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/update/{collection}")
+@router.post("/update/{collection}")
 async def update_collection(collection: str):
     """
     Update a knowledge base collection by re-ingesting from source.

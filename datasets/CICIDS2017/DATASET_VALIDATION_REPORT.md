@@ -540,5 +540,4 @@ The CICIDS2017 improved dataset is a high-quality, well-documented intrusion det
 
 ---
 
-**Report Compiled By**: AI-SOC Research Team
-**Institution**: California State University, San Bernardino
+**Report Compiled By**: AI-SOC Project

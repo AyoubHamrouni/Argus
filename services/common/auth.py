@@ -1,44 +1,81 @@
 """
 JWT Authentication System - Common Utilities
-AI-Augmented SOC - Production Security
+AI-Augmented SOC
 
-Implements JWT-based authentication for all API endpoints.
-Provides secure token generation, validation, and refresh mechanisms.
+JWT-based authentication with API key support and OAuth2 flows.
+Provides token generation, validation, refresh, and RBAC.
 
-Author: LOVELESS (Elite Security Specialist)
-Mission: OPERATION SECURITY-FORTRESS
-Date: 2025-10-23
+Supports:
+- JWT access and refresh tokens (HS256)
+- API keys with aisoc_ prefix
+- OAuth2 authorization code flow (via stateless JWT)
+- Role-based access control via scopes
 """
 
 import logging
+import secrets
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from functools import wraps
+from typing import Optional, Dict, Any, List
 
 import jwt
-from fastapi import HTTPException, Security, status
+from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
-import secrets
 
 logger = logging.getLogger(__name__)
 
-# Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer(auto_error=False)
 
-# HTTP Bearer token security
-security = HTTPBearer()
+
+class APIKeyStore(ABC):
+    """Abstract interface for API key persistence."""
+
+    @abstractmethod
+    async def store_key(self, key: str, data: Dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def get_key(self, key: str) -> Optional[Dict[str, Any]]: ...
+
+    @abstractmethod
+    async def revoke_key(self, key: str) -> bool: ...
+
+    @abstractmethod
+    async def list_keys(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]: ...
+
+
+class InMemoryAPIKeyStore(APIKeyStore):
+    """In-memory API key store for development."""
+
+    def __init__(self):
+        self._keys: Dict[str, Dict[str, Any]] = {}
+
+    async def store_key(self, key: str, data: Dict[str, Any]) -> None:
+        self._keys[key] = data
+
+    async def get_key(self, key: str) -> Optional[Dict[str, Any]]:
+        return self._keys.get(key)
+
+    async def revoke_key(self, key: str) -> bool:
+        if key in self._keys:
+            self._keys[key]["is_active"] = False
+            return True
+        return False
+
+    async def list_keys(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        keys = list(self._keys.values())
+        if user_id:
+            keys = [k for k in keys if k.get("user_id") == user_id]
+        return keys
 
 
 class JWTAuthManager:
     """
-    JWT Authentication Manager for FastAPI services.
+    JWT Authentication Manager.
 
-    Handles:
-    - Token generation and validation
-    - API key management
-    - Token refresh
-    - User authentication
+    Handles token generation, validation, API key management,
+    and password hashing for all AI-SOC services.
     """
 
     def __init__(
@@ -46,17 +83,9 @@ class JWTAuthManager:
         secret_key: str,
         algorithm: str = "HS256",
         access_token_expire_minutes: int = 30,
-        refresh_token_expire_days: int = 7
+        refresh_token_expire_days: int = 7,
+        api_key_store: Optional[APIKeyStore] = None,
     ):
-        """
-        Initialize JWT authentication manager.
-
-        Args:
-            secret_key: Secret key for JWT signing (use 32+ byte random string)
-            algorithm: JWT signing algorithm (default: HS256)
-            access_token_expire_minutes: Access token lifetime in minutes
-            refresh_token_expire_days: Refresh token lifetime in days
-        """
         if len(secret_key) < 32:
             raise ValueError("Secret key must be at least 32 characters")
 
@@ -64,337 +93,196 @@ class JWTAuthManager:
         self.algorithm = algorithm
         self.access_token_expire_minutes = access_token_expire_minutes
         self.refresh_token_expire_days = refresh_token_expire_days
+        self.key_store = api_key_store or InMemoryAPIKeyStore()
 
-        # In-memory API key store (production: use Redis or database)
-        self.api_keys: Dict[str, Dict[str, Any]] = {}
+        logger.info("JWT Auth Manager initialized (algorithm=%s)", algorithm)
 
-        logger.info("JWT Auth Manager initialized")
-
-    def generate_api_key(
+    async def generate_api_key(
         self,
         user_id: str,
-        scopes: list[str] = None,
-        expires_days: int = 365
-    ) -> str:
-        """
-        Generate a new API key for a user.
-
-        Args:
-            user_id: User identifier
-            scopes: List of permission scopes
-            expires_days: API key expiration in days
-
-        Returns:
-            str: Generated API key
-        """
+        scopes: Optional[List[str]] = None,
+        expires_days: int = 365,
+        name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate and store a new API key."""
         api_key = f"aisoc_{secrets.token_urlsafe(32)}"
+        now = datetime.utcnow()
 
-        self.api_keys[api_key] = {
+        key_data = {
+            "key": api_key,
             "user_id": user_id,
+            "name": name or f"key-{user_id}",
             "scopes": scopes or ["read", "write"],
-            "created_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(days=expires_days),
-            "is_active": True
+            "created_at": now.isoformat(),
+            "expires_at": (now + timedelta(days=expires_days)).isoformat(),
+            "is_active": True,
         }
 
-        logger.info(f"Generated API key for user: {user_id}")
-        return api_key
+        await self.key_store.store_key(api_key, key_data)
+        logger.info("Generated API key for user=%s name=%s", user_id, key_data["name"])
+        return key_data
 
-    def validate_api_key(self, api_key: str) -> Optional[Dict[str, Any]]:
-        """
-        Validate an API key.
-
-        Args:
-            api_key: API key to validate
-
-        Returns:
-            Optional[Dict]: API key metadata if valid, None otherwise
-        """
-        if api_key not in self.api_keys:
-            logger.warning(f"Invalid API key attempted")
+    async def validate_api_key(self, api_key: str) -> Optional[Dict[str, Any]]:
+        """Validate an API key and return its metadata."""
+        key_data = await self.key_store.get_key(api_key)
+        if key_data is None:
+            logger.warning("Invalid API key attempted")
             return None
 
-        key_data = self.api_keys[api_key]
-
-        # Check expiration
-        if datetime.utcnow() > key_data["expires_at"]:
-            logger.warning(f"Expired API key used: {key_data['user_id']}")
+        if not key_data.get("is_active", False):
+            logger.warning("Inactive API key used")
             return None
 
-        # Check if active
-        if not key_data["is_active"]:
-            logger.warning(f"Inactive API key used: {key_data['user_id']}")
+        expires_at = key_data.get("expires_at")
+        if expires_at and datetime.fromisoformat(expires_at) < datetime.utcnow():
+            logger.warning("Expired API key used")
             return None
 
         return key_data
 
-    def revoke_api_key(self, api_key: str) -> bool:
-        """
-        Revoke an API key.
+    async def revoke_api_key(self, api_key: str) -> bool:
+        return await self.key_store.revoke_api_key(api_key)
 
-        Args:
-            api_key: API key to revoke
-
-        Returns:
-            bool: True if revoked successfully
-        """
-        if api_key in self.api_keys:
-            self.api_keys[api_key]["is_active"] = False
-            logger.info(f"Revoked API key for user: {self.api_keys[api_key]['user_id']}")
-            return True
-        return False
+    async def list_api_keys(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        return await self.key_store.list_keys(user_id)
 
     def create_access_token(
         self,
         data: Dict[str, Any],
-        expires_delta: Optional[timedelta] = None
+        expires_delta: Optional[timedelta] = None,
     ) -> str:
-        """
-        Create a JWT access token.
-
-        Args:
-            data: Data to encode in token (e.g., {"sub": "user_id"})
-            expires_delta: Custom expiration time
-
-        Returns:
-            str: Encoded JWT token
-        """
+        """Create a JWT access token."""
         to_encode = data.copy()
-
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(minutes=self.access_token_expire_minutes)
-
+        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=self.access_token_expire_minutes))
         to_encode.update({
             "exp": expire,
             "iat": datetime.utcnow(),
-            "type": "access"
+            "type": "access",
         })
-
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return encoded_jwt
+        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
     def create_refresh_token(self, data: Dict[str, Any]) -> str:
-        """
-        Create a JWT refresh token.
-
-        Args:
-            data: Data to encode in token
-
-        Returns:
-            str: Encoded refresh token
-        """
+        """Create a JWT refresh token."""
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(days=self.refresh_token_expire_days)
-
         to_encode.update({
             "exp": expire,
             "iat": datetime.utcnow(),
-            "type": "refresh"
+            "type": "refresh",
         })
-
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return encoded_jwt
+        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """
-        Verify and decode a JWT token.
-
-        Args:
-            token: JWT token to verify
-
-        Returns:
-            Optional[Dict]: Decoded token payload if valid, None otherwise
-        """
+        """Verify and decode a JWT token."""
         try:
-            payload = jwt.decode(
-                token,
-                self.secret_key,
-                algorithms=[self.algorithm]
-            )
+            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             return payload
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired")
             return None
         except jwt.InvalidTokenError as e:
-            logger.warning(f"Invalid token: {e}")
+            logger.warning("Invalid token: %s", e)
             return None
 
+    def refresh_access_token(self, refresh_token: str) -> Optional[str]:
+        """Create a new access token from a valid refresh token."""
+        payload = self.verify_token(refresh_token)
+        if payload is None or payload.get("type") != "refresh":
+            return None
+        token_data = {k: v for k, v in payload.items() if k not in ("exp", "iat", "type")}
+        return self.create_access_token(token_data)
+
     def hash_password(self, password: str) -> str:
-        """
-        Hash a password using bcrypt.
-
-        Args:
-            password: Plain-text password
-
-        Returns:
-            str: Hashed password
-        """
         return pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        """
-        Verify a password against its hash.
-
-        Args:
-            plain_password: Plain-text password to verify
-            hashed_password: Hashed password to compare against
-
-        Returns:
-            bool: True if password matches
-        """
         return pwd_context.verify(plain_password, hashed_password)
 
 
-# Global authentication manager (initialized in main.py)
+# ---------------------------------------------------------------------------
+# Global singleton
+# ---------------------------------------------------------------------------
+
 auth_manager: Optional[JWTAuthManager] = None
 
 
 def init_auth_manager(secret_key: str, **kwargs) -> JWTAuthManager:
-    """
-    Initialize global authentication manager.
-
-    Args:
-        secret_key: JWT secret key
-        **kwargs: Additional configuration options
-
-    Returns:
-        JWTAuthManager: Initialized auth manager
-    """
+    """Initialize the global auth manager. Call once at app startup."""
     global auth_manager
     auth_manager = JWTAuthManager(secret_key, **kwargs)
     return auth_manager
 
 
-async def verify_jwt_token(
-    credentials: HTTPAuthorizationCredentials = Security(security)
+# ---------------------------------------------------------------------------
+# FastAPI dependencies
+# ---------------------------------------------------------------------------
+
+async def verify_token_dependency(
+    credentials: HTTPAuthorizationCredentials = None,
 ) -> Dict[str, Any]:
-    """
-    FastAPI dependency for JWT token verification.
-
-    Usage:
-        @app.get("/protected")
-        async def protected_endpoint(token_data: dict = Depends(verify_jwt_token)):
-            return {"user": token_data["sub"]}
-
-    Args:
-        credentials: HTTP Bearer credentials from request
-
-    Returns:
-        Dict: Decoded token payload
-
-    Raises:
-        HTTPException: If token is invalid or expired
-    """
+    """FastAPI dependency: verify JWT or API key from Authorization header."""
     if auth_manager is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication system not initialized"
+            detail="Authentication system not initialized",
+        )
+
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     token = credentials.credentials
-    payload = auth_manager.verify_token(token)
 
+    # API key
+    if token.startswith("aisoc_"):
+        key_data = await auth_manager.validate_api_key(token)
+        if key_data is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired API key",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return key_data
+
+    # JWT
+    payload = auth_manager.verify_token(token)
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
-
     if payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token type"
+            detail="Invalid token type",
         )
-
     return payload
 
 
-async def verify_api_key(
-    credentials: HTTPAuthorizationCredentials = Security(security)
-) -> Dict[str, Any]:
-    """
-    FastAPI dependency for API key verification.
+def require_scopes(required_scopes: List[str]):
+    """Dependency factory: require specific scopes for endpoint access."""
 
-    Supports both JWT tokens and API keys.
+    async def _check(
+        credentials: HTTPAuthorizationCredentials = None,
+    ) -> Dict[str, Any]:
+        user = await verify_token_dependency(credentials)
+        user_scopes = user.get("scopes", [])
 
-    Args:
-        credentials: HTTP Bearer credentials from request
-
-    Returns:
-        Dict: User/API key metadata
-
-    Raises:
-        HTTPException: If authentication fails
-    """
-    if auth_manager is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication system not initialized"
-        )
-
-    token = credentials.credentials
-
-    # Try JWT first
-    if not token.startswith("aisoc_"):
-        return await verify_jwt_token(credentials)
-
-    # Validate as API key
-    key_data = auth_manager.validate_api_key(token)
-
-    if key_data is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired API key",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    return key_data
-
-
-def require_scopes(required_scopes: list[str]):
-    """
-    Decorator to require specific scopes for endpoint access.
-
-    Usage:
-        @app.get("/admin")
-        @require_scopes(["admin"])
-        async def admin_endpoint():
-            return {"status": "admin access"}
-
-    Args:
-        required_scopes: List of required permission scopes
-
-    Returns:
-        Decorator function
-    """
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, token_data: dict = Security(verify_api_key), **kwargs):
-            user_scopes = token_data.get("scopes", [])
-
-            if not any(scope in user_scopes for scope in required_scopes):
+        for scope in required_scopes:
+            if scope not in user_scopes:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Insufficient permissions. Required: {required_scopes}"
+                    detail=f"Insufficient permissions. Required: {scope}",
                 )
+        return user
 
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
+    return _check
 
 
-# Production: Use environment variables or secure vault
 def generate_secret_key() -> str:
-    """
-    Generate a secure random secret key for JWT signing.
-
-    WARNING: In production, generate this ONCE and store securely.
-    Never regenerate on server restart or tokens will be invalidated.
-
-    Returns:
-        str: 64-character random secret key
-    """
+    """Generate a secure random secret key. Store this securely in production."""
     return secrets.token_urlsafe(64)

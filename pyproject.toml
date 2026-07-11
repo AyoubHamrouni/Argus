@@ -40,6 +40,16 @@ ignore_errors = true
 minversion = "7.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "e2e: marks tests as end-to-end tests",
+    "security: marks tests as security tests",
+    "browser: marks tests as browser/UI tests",
+    "slow: marks tests as slow",
+    "requires_ollama: marks tests requiring Ollama",
+    "requires_docker: marks tests requiring Docker",
+]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

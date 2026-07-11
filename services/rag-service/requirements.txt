@@ -38,3 +38,8 @@ pytest-cov==5.0.0
 
 # Security
 python-dotenv==1.0.1
+
+# Observability
+opentelemetry-api==1.25.0
+opentelemetry-sdk==1.25.0
+opentelemetry-instrumentation-fastapi==0.46b0

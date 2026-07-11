@@ -9,7 +9,6 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
-  NODE_VERSION: '18'
 
 jobs:
   # ============================================================================
@@ -32,38 +31,33 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black pylint mypy flake8 bandit
+          pip install black isort pylint mypy flake8 bandit
           pip install -r services/alert-triage/requirements.txt || true
           pip install -r services/rag-service/requirements.txt || true
           pip install -r ml_training/requirements.txt || true
 
       - name: Run Black (Code Formatting)
-        run: |
-          echo "🎨 Checking code formatting with Black..."
-          black --check --diff services/ tests/ || true
+        run: black --check --diff services/ tests/
+
+      - name: Run isort (Import Sorting)
+        run: isort --check-only --diff services/ tests/
 
       - name: Run Pylint (Code Analysis)
         run: |
-          echo "🔍 Running Pylint code analysis..."
-          pylint services/alert-triage/*.py --exit-zero || true
-          pylint services/rag-service/*.py --exit-zero || true
-          pylint services/common/*.py --exit-zero || true
+          pylint services/alert-triage/*.py
+          pylint services/rag-service/*.py
+          pylint services/common/*.py
 
       - name: Run Flake8 (Style Guide)
-        run: |
-          echo "📏 Checking style guide compliance..."
-          flake8 services/ --count --select=E9,F63,F7,F82 --show-source --statistics || true
+        run: flake8 services/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Run MyPy (Type Checking)
-        run: |
-          echo "🔢 Running type checking..."
-          mypy services/alert-triage/*.py --ignore-missing-imports || true
+        run: mypy services/alert-triage/*.py --ignore-missing-imports
 
       - name: Run Bandit (Security Linting)
         run: |
-          echo "🔒 Running security linting..."
-          bandit -r services/ -f json -o bandit-report.json || true
-          bandit -r services/ -f screen || true
+          bandit -r services/ -f json -o bandit-report.json
+          bandit -r services/ -f screen
 
       - name: Upload Bandit Report
         uses: actions/upload-artifact@v4
@@ -99,8 +93,12 @@ jobs:
 
       - name: Run unit tests
         run: |
-          echo "🧪 Running unit tests..."
-          pytest tests/unit/ -v --tb=short --junit-xml=junit-unit.xml --cov=services --cov-report=xml --cov-report=html || true
+          pytest tests/unit/ -v --tb=short \
+            --junit-xml=junit-unit.xml \
+            --cov=services \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=50
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -129,7 +127,6 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      # ChromaDB for RAG testing
       chromadb:
         image: chromadb/chroma:latest
         ports:
@@ -152,17 +149,11 @@ jobs:
           pip install -r services/alert-triage/requirements.txt || true
           pip install -r services/rag-service/requirements.txt || true
 
-      - name: Start services
-        run: |
-          echo "🚀 Starting AI-SOC services..."
-          # Start services in background
-          cd services/rag-service && python main.py &
-          sleep 10
-
       - name: Run integration tests
         run: |
-          echo "🔗 Running integration tests..."
-          pytest tests/integration/ -v --tb=short --junit-xml=junit-integration.xml -m "not requires_ollama" || true
+          pytest tests/integration/ -v --tb=short \
+            --junit-xml=junit-integration.xml \
+            -m "not requires_ollama"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -199,8 +190,9 @@ jobs:
 
       - name: Run security tests
         run: |
-          echo "🔒 Running OWASP Top 10 security tests..."
-          pytest tests/security/ -v --tb=short --junit-xml=junit-security.xml -m security || true
+          pytest tests/security/ -v --tb=short \
+            --junit-xml=junit-security.xml \
+            -m security
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -234,7 +226,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [alert-triage, rag-service, log-summarization, ml-inference]
+        service: [alert-triage, rag-service, correlation-engine, response-orchestrator]
 
     steps:
       - name: Checkout code
@@ -246,20 +238,17 @@ jobs:
       - name: Build Docker image
         run: |
           if [ -f "services/${{ matrix.service }}/Dockerfile" ]; then
-            echo "🐳 Building ${{ matrix.service }} Docker image..."
+            echo "Building ${{ matrix.service }} Docker image..."
             cd services/${{ matrix.service }}
             docker build -t ai-soc/${{ matrix.service }}:test .
-            docker images | grep ${{ matrix.service }}
           else
-            echo "⚠️  Dockerfile not found for ${{ matrix.service }}"
+            echo "Dockerfile not found for ${{ matrix.service }}"
+            exit 1
           fi
 
       - name: Test Docker image
         run: |
-          if docker images | grep -q "${{ matrix.service }}"; then
-            echo "✅ ${{ matrix.service }} image built successfully"
-            docker run --rm ai-soc/${{ matrix.service }}:test --version || echo "No --version flag"
-          fi
+          docker run --rm ai-soc/${{ matrix.service }}:test python -c "print('ok')"
 
   # ============================================================================
   # Dependency Security Scan
@@ -281,9 +270,10 @@ jobs:
           args: --all-projects --severity-threshold=high
 
       - name: Run Safety check
+        continue-on-error: true
         run: |
           pip install safety
-          safety check --json || true
+          safety check --json
 
   # ============================================================================
   # Test Summary
@@ -295,19 +285,19 @@ jobs:
     if: always()
 
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-
       - name: Generate test summary
         run: |
-          echo "# 🧪 AI-SOC Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# AI-SOC Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Code Quality: Completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Unit Tests: Completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Integration Tests: Completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Security Tests: Completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Docker Build: Completed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 Coverage & Reports" >> $GITHUB_STEP_SUMMARY
-          echo "View artifacts for detailed reports" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Tests | ${{ needs.security-tests.result == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ needs.docker-build.result == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Reports" >> $GITHUB_STEP_SUMMARY
+          echo "View artifacts for detailed reports." >> $GITHUB_STEP_SUMMARY

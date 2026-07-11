@@ -7,6 +7,7 @@ Mission: OPERATION TEST-FORTRESS
 Date: 2025-10-22
 """
 
+import os
 import pytest
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
@@ -35,13 +36,13 @@ class TestModelLoading:
     def test_load_scaler(self, mock_pickle):
         """Test StandardScaler loading"""
         mock_scaler = MagicMock()
-        mock_scaler.transform = MagicMock(return_value=np.array([[0.0] * 78]))
+        mock_scaler.transform = MagicMock(return_value=np.array([[0.0] * 77]))
         mock_pickle.return_value = mock_scaler
 
         # Test scaler transformation
-        X = np.array([[1.0] * 78])
+        X = np.array([[1.0] * 77])
         X_scaled = mock_scaler.transform(X)
-        assert X_scaled.shape == (1, 78)
+        assert X_scaled.shape == (1, 77)
 
     @patch('pickle.load')
     def test_load_label_encoder(self, mock_pickle):
@@ -65,8 +66,8 @@ class TestFeatureValidation:
     """Test network flow feature validation"""
 
     def test_valid_feature_count(self, sample_network_flow):
-        """Test correct number of features (78)"""
-        assert len(sample_network_flow["features"]) == 78
+        """Test correct number of features (77)"""
+        assert len(sample_network_flow["features"]) == 77
 
     def test_invalid_feature_count(self):
         """Test rejection of incorrect feature count"""
@@ -75,7 +76,7 @@ class TestFeatureValidation:
             "model_name": "random_forest"
         }
         # API should reject this
-        assert len(invalid_flow["features"]) != 78
+        assert len(invalid_flow["features"]) != 77
 
     def test_feature_types(self, sample_network_flow):
         """Test all features are numeric"""
@@ -85,7 +86,7 @@ class TestFeatureValidation:
     def test_nan_handling(self):
         """Test handling of NaN values in features"""
         flow_with_nan = {
-            "features": [float('nan')] * 78,
+            "features": [float('nan')] * 77,
             "model_name": "random_forest"
         }
         # Should handle or reject NaN values
@@ -104,21 +105,21 @@ class TestPredictions:
     def test_benign_prediction(self):
         """Test benign traffic classification"""
         # Mock benign traffic features (low values)
-        benign_features = [0.0] * 78
+        benign_features = [0.0] * 77
         benign_features[0] = 100.0  # flow_duration
         benign_features[1] = 10.0   # total_fwd_packet
 
         # Would test actual prediction here
-        assert len(benign_features) == 78
+        assert len(benign_features) == 77
 
     def test_attack_prediction(self):
         """Test attack traffic classification"""
         # Mock attack traffic features (anomalous values)
-        attack_features = [0.0] * 78
+        attack_features = [0.0] * 77
         attack_features[0] = 1000000.0  # Very long flow_duration
         attack_features[1] = 5000.0     # Many packets
 
-        assert len(attack_features) == 78
+        assert len(attack_features) == 77
 
     def test_confidence_score_range(self, mock_ml_prediction):
         """Test confidence scores are between 0 and 1"""
@@ -170,43 +171,52 @@ class TestModelSelection:
 class TestMLInferenceEndpoints:
     """Test ML Inference API endpoints"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ML_INFERENCE_URL"),
+        reason="Set ML_INFERENCE_URL to run ML inference endpoint tests"
+    )
     async def test_health_endpoint(self, http_client, ml_inference_url):
         """Test /health endpoint"""
-        try:
-            response = await http_client.get(f"{ml_inference_url}/health")
-            if response.status_code == 200:
-                data = response.json()
-                assert "status" in data
-                assert "models_loaded" in data
-        except Exception as e:
-            pytest.skip(f"ML service not running: {e}")
+        response = await http_client.get(f"{ml_inference_url}/health")
+        if response.status_code == 200:
+            data = response.json()
+            assert "status" in data
+            assert "models_loaded" in data
+        else:
+            pytest.fail(f"ML health check failed with status {response.status_code}")
 
+    @pytest.mark.skipif(
+        not os.getenv("ML_INFERENCE_URL"),
+        reason="Set ML_INFERENCE_URL to run ML inference endpoint tests"
+    )
     async def test_models_endpoint(self, http_client, ml_inference_url):
         """Test /models endpoint"""
-        try:
-            response = await http_client.get(f"{ml_inference_url}/models")
-            if response.status_code == 200:
-                data = response.json()
-                assert "total_models" in data
-                assert "models" in data
-        except Exception as e:
-            pytest.skip(f"ML service not running: {e}")
+        response = await http_client.get(f"{ml_inference_url}/models")
+        if response.status_code == 200:
+            data = response.json()
+            assert "total_models" in data
+            assert "models" in data
+        else:
+            pytest.fail(f"ML models endpoint failed with status {response.status_code}")
 
+    @pytest.mark.skipif(
+        not os.getenv("ML_INFERENCE_URL"),
+        reason="Set ML_INFERENCE_URL to run ML inference endpoint tests"
+    )
     async def test_predict_endpoint(self, http_client, ml_inference_url, sample_network_flow):
         """Test /predict endpoint"""
-        try:
-            response = await http_client.post(
-                f"{ml_inference_url}/predict",
-                json=sample_network_flow
-            )
-            if response.status_code == 200:
-                data = response.json()
-                assert "prediction" in data
-                assert "confidence" in data
-                assert "model_used" in data
-                assert data["prediction"] in ["BENIGN", "ATTACK"]
-        except Exception as e:
-            pytest.skip(f"ML service not running: {e}")
+        response = await http_client.post(
+            f"{ml_inference_url}/predict",
+            json=sample_network_flow
+        )
+        if response.status_code == 200:
+            data = response.json()
+            assert "prediction" in data
+            assert "confidence" in data
+            assert "model_used" in data
+            assert data["prediction"] in ["BENIGN", "ATTACK"]
+        else:
+            pytest.fail(f"ML predict endpoint failed with status {response.status_code}")
 
 
 # ============================================================================
@@ -218,34 +228,37 @@ class TestMLInferenceEndpoints:
 class TestInferencePerformance:
     """Test inference performance characteristics"""
 
+    @pytest.mark.skipif(
+        not os.getenv("ML_INFERENCE_URL"),
+        reason="Set ML_INFERENCE_URL to run ML inference endpoint tests"
+    )
     @pytest.mark.asyncio
     async def test_inference_latency(self, http_client, ml_inference_url, sample_network_flow):
         """Test inference latency is <100ms"""
         import time
 
-        try:
-            start = time.time()
-            response = await http_client.post(
-                f"{ml_inference_url}/predict",
-                json=sample_network_flow,
-                timeout=10.0
-            )
-            latency = (time.time() - start) * 1000  # ms
+        start = time.time()
+        response = await http_client.post(
+            f"{ml_inference_url}/predict",
+            json=sample_network_flow,
+            timeout=10.0
+        )
+        latency = (time.time() - start) * 1000  # ms
 
-            if response.status_code == 200:
-                data = response.json()
-                # Check API-reported latency
-                assert data["inference_time_ms"] < 100, f"Inference too slow: {data['inference_time_ms']}ms"
-                # Check total latency including network
-                assert latency < 200, f"Total latency too slow: {latency}ms"
-        except Exception as e:
-            pytest.skip(f"ML service not running: {e}")
+        if response.status_code == 200:
+            data = response.json()
+            # Check API-reported latency
+            assert data["inference_time_ms"] < 100, f"Inference too slow: {data['inference_time_ms']}ms"
+            # Check total latency including network
+            assert latency < 200, f"Total latency too slow: {latency}ms"
+        else:
+            pytest.fail(f"ML inference failed with status {response.status_code}")
 
     def test_batch_processing_overhead(self):
         """Test batch processing efficiency"""
         # Create batch of predictions
         batch_size = 100
-        predictions = [{"features": [0.0] * 78} for _ in range(batch_size)]
+        predictions = [{"features": [0.0] * 77} for _ in range(batch_size)]
 
         # Batch should be more efficient than individual predictions
         assert len(predictions) == batch_size
@@ -290,7 +303,7 @@ class TestEdgeCases:
     def test_all_zeros_input(self):
         """Test handling of all-zero feature vector"""
         zero_flow = {
-            "features": [0.0] * 78,
+            "features": [0.0] * 77,
             "model_name": "random_forest"
         }
         assert all(f == 0.0 for f in zero_flow["features"])
@@ -298,7 +311,7 @@ class TestEdgeCases:
     def test_extreme_values(self):
         """Test handling of extreme feature values"""
         extreme_flow = {
-            "features": [1e10] * 78,  # Very large values
+            "features": [1e10] * 77,  # Very large values
             "model_name": "random_forest"
         }
         # Scaler should normalize these
@@ -307,7 +320,7 @@ class TestEdgeCases:
     def test_negative_values(self):
         """Test handling of negative feature values"""
         negative_flow = {
-            "features": [-1.0] * 78,
+            "features": [-1.0] * 77,
             "model_name": "random_forest"
         }
         # Some features can be negative after scaling
@@ -326,7 +339,7 @@ class TestSecurityValidation:
     def test_input_sanitization(self):
         """Test input sanitization and validation"""
         malicious_input = {
-            "features": [0.0] * 78,
+            "features": [0.0] * 77,
             "model_name": "'; DROP TABLE models; --"  # SQL injection attempt
         }
         # Should be rejected or sanitized

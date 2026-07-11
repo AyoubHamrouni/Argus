@@ -5,9 +5,12 @@ AI-Augmented SOC
 FastAPI webhook receiver for Wazuh alerts with AI-powered triage and enrichment.
 """
 
+import os
 import structlog
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Depends, APIRouter
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -15,6 +18,9 @@ from config import get_settings
 from models import WazuhAlert, EnrichedAlert
 from wazuh_client import WazuhClient
 from ai_client import AIClient
+from common.rate_limit import RateLimitMiddleware
+from common.cache import init_redis, close_redis
+from services.common.tracing import init_tracing, instrument_app, instrument_httpx
 
 # Configure structured logging
 structlog.configure(
@@ -27,11 +33,33 @@ structlog.configure(
 logger = structlog.get_logger()
 
 
+# Auth
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    api_key_enabled = os.getenv("WAZUH_API_KEY_ENABLED", "true").lower() == "true"
+    if not api_key_enabled:
+        return True
+    api_key = os.getenv("WAZUH_API_KEY", "")
+    if not credentials or credentials.credentials != api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API Key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
+
+
 # Lifespan context manager for startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize clients on startup"""
     settings = get_settings()
+
+    # Initialize OpenTelemetry tracing
+    init_tracing("wazuh-integration")
+    instrument_app(app, "wazuh-integration")
+    instrument_httpx()
 
     # Initialize clients
     app.state.wazuh_client = WazuhClient(settings)
@@ -46,8 +74,14 @@ async def lifespan(app: FastAPI):
         rag_threshold=settings.rag_severity_threshold
     )
 
+    # Initialize Redis cache
+    import os
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    await init_redis(redis_url)
+
     yield
 
+    await close_redis()
     logger.info("service_shutdown")
 
 
@@ -56,11 +90,25 @@ app = FastAPI(
     title="Wazuh Integration Service",
     description="AI-powered webhook receiver for Wazuh alerts with intelligent triage and enrichment",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)]
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.post(
+app.add_middleware(RateLimitMiddleware)
+
+router = APIRouter(prefix="/api/v1/wazuh", tags=["v1"])
+app.include_router(router)
+
+
+@router.post(
     "/webhook",
     response_model=EnrichedAlert,
     status_code=status.HTTP_200_OK,
@@ -204,7 +252,7 @@ async def receive_wazuh_alert(alert: WazuhAlert):
         )
 
 
-@app.get(
+@router.get(
     "/alerts",
     summary="Fetch recent alerts from Wazuh Manager",
     description="Query Wazuh Manager API for high-severity alerts and return enriched analysis"
