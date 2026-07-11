@@ -10,7 +10,7 @@ python-multipart==0.0.6
 slowapi==0.1.9
 
 # Input Validation & Sanitization
-pydantic==2.5.0
+pydantic==2.13.4
 email-validator==2.1.0
 
 # Security Testing
