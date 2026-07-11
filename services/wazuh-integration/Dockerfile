@@ -5,7 +5,7 @@
 # FastAPI webhook receiver for Wazuh alerts with AI-powered analysis
 # ============================================================================
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Metadata
 LABEL maintainer="Ayoub Hamrouni"
