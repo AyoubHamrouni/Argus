@@ -213,7 +213,7 @@ async def retrieve_context(request: RetrievalRequest):
     except Exception as e:
         logger.error(f"Retrieval failed: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/ingest")
@@ -257,7 +257,7 @@ async def ingest_documents(collection: str, documents: List[Dict[str, Any]]):
     except Exception as e:
         logger.error(f"Ingestion failed: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/collections")
@@ -289,7 +289,7 @@ async def list_collections():
     except Exception as e:
         logger.error(f"Failed to list collections: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/ingest/mitre")
@@ -306,7 +306,7 @@ async def ingest_mitre():
     except Exception as e:
         logger.error(f"MITRE ingestion failed: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/ingest/cve")
@@ -341,7 +341,7 @@ async def ingest_cve(severity: str = "CRITICAL"):
     except Exception as e:
         logger.error(f"CVE ingestion failed: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/ingest/runbooks")
@@ -370,7 +370,7 @@ async def ingest_runbooks(runbooks_dir: Optional[str] = None):
     except Exception as e:
         logger.error(f"Runbook ingestion failed: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/update/{collection}")
@@ -399,7 +399,7 @@ async def update_collection(collection: str):
     except Exception as e:
         logger.error(f"Collection update failed for {collection}: {e}")
         logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/")

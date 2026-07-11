@@ -1,7 +1,7 @@
 services:
   # Ollama LLM Server
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.1.48
     container_name: ollama
     hostname: ollama
     restart: unless-stopped
@@ -370,7 +370,7 @@ services:
 
   # ChromaDB
   chromadb:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.4.24
     container_name: chromadb
     hostname: chromadb
     restart: unless-stopped

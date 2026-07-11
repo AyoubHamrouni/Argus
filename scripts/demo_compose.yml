@@ -1,0 +1,266 @@
+# =============================================================================
+# Argus Demo Profile
+# =============================================================================
+# Minimal compose file for running the Argus demo against live services.
+# Starts ONLY the AI services needed for the demo:
+#   - Ollama (LLM inference)
+#   - ML Inference (anomaly detection)
+#   - Alert Triage (LLM-powered triage)
+#   - RAG Service (retrieval-augmented generation)
+#   - ChromaDB (vector DB for RAG)
+#   - Redis (caching)
+#   - PostgreSQL (metadata storage)
+#
+# Usage:
+#   docker compose -f demo_compose.yml up -d
+#   docker compose -f demo_compose.yml down
+#
+# No Wazuh, Suricata, or Zeek included.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Ollama LLM Server
+  # ---------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:0.1.48
+    container_name: argus-demo-ollama
+    hostname: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - argus-demo
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: "4.0"
+        reservations:
+          memory: 4G
+          cpus: "2.0"
+
+  # ---------------------------------------------------------------------------
+  # ML Inference API (anomaly detection)
+  # ---------------------------------------------------------------------------
+  ml-inference:
+    image: argus/ml-inference:0.1.0
+    container_name: argus-demo-ml-inference
+    hostname: ml-inference
+    restart: unless-stopped
+    ports:
+      - "8500:8000"
+    environment:
+      - MODEL_PATH=/app/models
+      - LOG_LEVEL=INFO
+    networks:
+      - argus-demo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+
+  # ---------------------------------------------------------------------------
+  # Alert Triage Service (LLM-powered alert analysis)
+  # ---------------------------------------------------------------------------
+  alert-triage:
+    image: argus/alert-triage:0.1.0
+    container_name: argus-demo-alert-triage
+    hostname: alert-triage
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    environment:
+      - TRIAGE_OLLAMA_HOST=http://ollama:11434
+      - TRIAGE_PRIMARY_MODEL=llama3.2:3b
+      - TRIAGE_ML_API_URL=http://ml-inference:8000
+      - TRIAGE_RAG_SERVICE_URL=http://rag-service:8000
+    networks:
+      - argus-demo
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ml-inference:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  # ---------------------------------------------------------------------------
+  # RAG Service (retrieval-augmented generation)
+  # ---------------------------------------------------------------------------
+  rag-service:
+    image: argus/rag-service:0.1.0
+    container_name: argus-demo-rag-service
+    hostname: rag-service
+    restart: unless-stopped
+    ports:
+      - "8300:8000"
+    environment:
+      - RAG_CHROMADB_HOST=chromadb
+      - RAG_CHROMADB_PORT=8000
+      - RAG_REDIS_HOST=redis
+      - RAG_REDIS_PORT=6379
+    networks:
+      - argus-demo
+    depends_on:
+      chromadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  # ---------------------------------------------------------------------------
+  # ChromaDB (vector database for RAG)
+  # ---------------------------------------------------------------------------
+  chromadb:
+    image: chromadb/chroma:0.4.24
+    container_name: argus-demo-chromadb
+    hostname: chromadb
+    restart: unless-stopped
+    ports:
+      - "8200:8000"
+    volumes:
+      - chromadb-data:/chroma/chroma
+    networks:
+      - argus-demo
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8000/api/v2/heartbeat || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  # ---------------------------------------------------------------------------
+  # Redis (caching layer)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: argus-demo-redis
+    hostname: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - argus-demo
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+        reservations:
+          memory: 128M
+          cpus: "0.1"
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL (metadata storage for alerts, feedback, incidents)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: argus-demo-postgres
+    hostname: postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=argus
+      - POSTGRES_USER=argus
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-argus_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - argus-demo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  argus-demo:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  ollama-data:
+    driver: local
+  chromadb-data:
+    driver: local
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local

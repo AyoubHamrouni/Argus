@@ -1,6 +1,6 @@
 """
 Unified Auth Middleware - Common Utilities
-AI-Augmented SOC
+Argus
 
 Centralized authentication middleware supporting JWT tokens, API keys,
 and OAuth2 flows. Replaces per-service local auth implementations.
@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from .auth import auth_manager, verify_token, validate_api_key
+from .auth import auth_manager
 from .roles import Scope, has_required_scope
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,6 @@ DEFAULT_EXEMPT_PATHS = {
     "/docs",
     "/openapi.json",
     "/redoc",
-    "/",
 }
 
 
@@ -88,7 +87,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Try API key first (aisoc_ prefix)
         if token.startswith("aisoc_"):
-            key_data = validate_api_key(token)
+            if auth_manager is None:
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={"detail": "Authentication system not initialized"},
+                )
+            key_data = await auth_manager.validate_api_key(token)
             if key_data is None:
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -100,7 +104,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Try JWT token
-        payload = verify_token(token)
+        if auth_manager is None:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"detail": "Authentication system not initialized"},
+            )
+        payload = auth_manager.verify_token(token)
         if payload is None:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,

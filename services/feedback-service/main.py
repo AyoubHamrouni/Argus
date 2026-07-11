@@ -171,7 +171,7 @@ async def store_alert(request: StoreAlertRequest):
             return result
         except Exception as e:
             logger.error(f"Failed to store alert {request.alert_id}: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/alerts")
@@ -207,7 +207,7 @@ async def query_alerts(
             )
         except Exception as e:
             logger.error(f"Failed to query alerts: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/alerts/{alert_id}")
@@ -239,7 +239,7 @@ async def get_feedback_stats():
             return await db.get_feedback_stats()
         except Exception as e:
             logger.error(f"Failed to compute feedback stats: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/feedback/{alert_id}")
@@ -302,7 +302,7 @@ async def get_roi_metrics(
             return await db.get_roi_metrics(organization_id=organization_id)
         except Exception as e:
             logger.error(f"Failed to compute ROI metrics: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # --- Metrics ---

@@ -1,12 +1,26 @@
-.PHONY: help install test lint format build docs clean docker-up docker-down docker-build
+.PHONY: help install test lint format build docs clean docker-up docker-down docker-build demo cli-install health
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install development dependencies
-	pip install -r tests/requirements.txt
-	pip install -r requirements-security.txt
+	pip install -e ".[dev]"
 	pre-commit install
+
+demo: ## Run synthetic demo (no Docker needed)
+	python -m argus.demo
+
+demo-live: ## Run demo against live services
+	python -m argus.demo --live
+
+cli-install: ## Install argus CLI in development mode
+	pip install -e ".[dev]"
+
+health: ## Run health checks against running services
+	python -c "from argus.health import run_health_checks; run_health_checks()"
+
+status: ## Show service status (alias for argus status)
+	argus status
 
 test: ## Run all unit tests
 	pytest tests/unit/ -v --tb=short --cov=services --cov-report=html

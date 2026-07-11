@@ -1,0 +1,19 @@
+Classification Report: Decision Tree
+============================================================
+Generated: 2026-07-11T04:16:59.925115
+
+              precision    recall  f1-score   support
+
+      BENIGN       0.54      0.55      0.55      2848
+      ATTACK       0.82      0.81      0.82      7152
+
+    accuracy                           0.74     10000
+   macro avg       0.68      0.68      0.68     10000
+weighted avg       0.74      0.74      0.74     10000
+
+
+Additional Metrics:
+  False Positive Rate: 44.9789%
+  ROC AUC: 0.657628
+  Model Size: 0.6099 MB
+  Train Time: 3.47s

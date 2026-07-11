@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-07-11T04:16:59.924568",
+  "dataset": {
+    "name": "CICIDS2017 (synthetic surrogate)",
+    "n_samples": 50000,
+    "n_features": 78,
+    "n_test_samples": 10000,
+    "class_distribution": {
+      "BENIGN": 2848,
+      "ATTACK": 7152
+    }
+  },
+  "models": {
+    "random_forest": {
+      "accuracy": 0.8993,
+      "precision": 0.900834,
+      "recall": 0.8993,
+      "f1_score": 0.895043,
+      "false_positive_rate": 0.290028,
+      "roc_auc": 0.954268,
+      "train_time_sec": 3.475,
+      "avg_inference_ms": 0.006858,
+      "model_size_mb": 93.3475,
+      "confusion_matrix": [
+        [
+          2022,
+          826
+        ],
+        [
+          181,
+          6971
+        ]
+      ],
+      "classification_report": "              precision    recall  f1-score   support\n\n      BENIGN       0.92      0.71      0.80      2848\n      ATTACK       0.89      0.97      0.93      7152\n\n    accuracy                           0.90     10000\n   macro avg       0.91      0.84      0.87     10000\nweighted avg       0.90      0.90      0.90     10000\n"
+    },
+    "xgboost": {
+      "accuracy": 0.9283,
+      "precision": 0.927999,
+      "recall": 0.9283,
+      "f1_score": 0.928127,
+      "false_positive_rate": 0.133778,
+      "roc_auc": 0.96621,
+      "train_time_sec": 6.9355,
+      "avg_inference_ms": 0.001337,
+      "model_size_mb": 1.457,
+      "confusion_matrix": [
+        [
+          2467,
+          381
+        ],
+        [
+          336,
+          6816
+        ]
+      ],
+      "classification_report": "              precision    recall  f1-score   support\n\n      BENIGN       0.88      0.87      0.87      2848\n      ATTACK       0.95      0.95      0.95      7152\n\n    accuracy                           0.93     10000\n   macro avg       0.91      0.91      0.91     10000\nweighted avg       0.93      0.93      0.93     10000\n"
+    },
+    "decision_tree": {
+      "accuracy": 0.7391,
+      "precision": 0.740409,
+      "recall": 0.7391,
+      "f1_score": 0.739738,
+      "false_positive_rate": 0.449789,
+      "roc_auc": 0.657628,
+      "train_time_sec": 3.4665,
+      "avg_inference_ms": 0.000288,
+      "model_size_mb": 0.6099,
+      "confusion_matrix": [
+        [
+          1567,
+          1281
+        ],
+        [
+          1328,
+          5824
+        ]
+      ],
+      "classification_report": "              precision    recall  f1-score   support\n\n      BENIGN       0.54      0.55      0.55      2848\n      ATTACK       0.82      0.81      0.82      7152\n\n    accuracy                           0.74     10000\n   macro avg       0.68      0.68      0.68     10000\nweighted avg       0.74      0.74      0.74     10000\n"
+    }
+  }
+}

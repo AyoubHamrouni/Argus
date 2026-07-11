@@ -305,7 +305,7 @@ async def trigger_defense(request: TriggerPlanRequest):
     except Exception as e:
         PLANS_TRIGGERED.labels(status="error").inc()
         logger.error(f"Defense trigger failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get(

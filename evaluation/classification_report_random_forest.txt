@@ -1,0 +1,19 @@
+Classification Report: Random Forest
+============================================================
+Generated: 2026-07-11T04:16:59.925019
+
+              precision    recall  f1-score   support
+
+      BENIGN       0.92      0.71      0.80      2848
+      ATTACK       0.89      0.97      0.93      7152
+
+    accuracy                           0.90     10000
+   macro avg       0.91      0.84      0.87     10000
+weighted avg       0.90      0.90      0.90     10000
+
+
+Additional Metrics:
+  False Positive Rate: 29.0028%
+  ROC AUC: 0.954268
+  Model Size: 93.3475 MB
+  Train Time: 3.47s

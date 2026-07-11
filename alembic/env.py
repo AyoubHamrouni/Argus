@@ -1,5 +1,6 @@
 import asyncio
 import importlib
+import os
 import sys
 from logging.config import fileConfig
 
@@ -10,6 +11,16 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+db_user = os.environ.get("POSTGRES_USER", "aisoc")
+db_password = os.environ.get("POSTGRES_PASSWORD", "CHANGE_ME_PostgresPassword789!")
+db_host = os.environ.get("POSTGRES_HOST", "postgres")
+db_port = os.environ.get("POSTGRES_PORT", "5432")
+db_name = os.environ.get("POSTGRES_DB", "aisoc_metadata")
+config.set_main_option(
+    "sqlalchemy.url",
+    f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}",
+)
 
 # Import Base from each service using importlib (directories have hyphens)
 def _import_module(dotted_path):

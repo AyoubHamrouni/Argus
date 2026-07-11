@@ -242,7 +242,7 @@ services:
   # ChromaDB - Vector Database
   # ==========================================================================
   chromadb:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.4.24
     container_name: chromadb
     hostname: chromadb
     restart: unless-stopped
@@ -273,7 +273,7 @@ services:
   # Ollama - LLM Inference Server
   # ==========================================================================
   ollama-server:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.1.48
     container_name: ollama-server
     hostname: ollama-server
     restart: unless-stopped

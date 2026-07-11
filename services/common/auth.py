@@ -141,7 +141,7 @@ class JWTAuthManager:
         return key_data
 
     async def revoke_api_key(self, api_key: str) -> bool:
-        return await self.key_store.revoke_api_key(api_key)
+        return await self.key_store.revoke_key(api_key)
 
     async def list_api_keys(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         return await self.key_store.list_keys(user_id)

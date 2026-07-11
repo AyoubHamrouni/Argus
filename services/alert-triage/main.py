@@ -149,9 +149,6 @@ app.add_middleware(
 
 app.add_middleware(RateLimitMiddleware)
 
-# OpenTelemetry Instrumentation
-FastAPIInstrumentor.instrument_app(app)
-
 router = APIRouter(prefix="/api/v1/triage", tags=["v1"])
 app.include_router(router)
 
@@ -232,7 +229,7 @@ async def analyze_alert(alert: SecurityAlert):
     except Exception as e:
         REQUEST_COUNT.labels(status="error").inc()
         logger.error(f"Unexpected error queuing alert {alert.alert_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 async def _persist_alert(alert: SecurityAlert, result: TriageResponse):

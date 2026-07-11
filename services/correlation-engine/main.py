@@ -997,7 +997,6 @@ async def generate_dataset(
     except Exception as exc:
         logger.error("Dataset generation failed: %s", exc, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Dataset generation failed: {exc}")
-        raise HTTPException(status_code=500, detail=f"Dataset generation failed: {exc}")
 
 
 # ---------------------------------------------------------------------------
