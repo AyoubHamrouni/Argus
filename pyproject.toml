@@ -60,7 +60,7 @@ demo = [
 ]
 ml = [
     "numpy>=1.24.0",
-    "pandas>=2.0.0",
+    "pandas>=2.3.3",
     "scikit-learn>=1.4.0",
     "xgboost>=2.0.0",
     "matplotlib>=3.7.0",
