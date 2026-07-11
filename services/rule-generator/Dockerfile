@@ -1,7 +1,7 @@
 # Rule Generator Service - Dockerfile
 # AI-Augmented SOC - LLM-Generated Detection Rules
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 LABEL version="1.0.0"
 LABEL description="LLM-powered Sigma detection rule generator"
