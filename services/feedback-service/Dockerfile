@@ -1,7 +1,7 @@
 # Feedback Service - Dockerfile
 # AI-Augmented SOC - Alert Persistence & Analyst Feedback
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 LABEL maintainer="abdul.bari8019@coyote.csusb.edu"
 LABEL version="1.0.0"
