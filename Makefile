@@ -86,4 +86,4 @@ clean: ## Clean build artifacts
 	rm -rf site/ docs/_build/
 
 redis-cli: ## Connect to Redis CLI
-	docker exec -it ai_soc-redis-1 redis-cli
+	docker exec -it argus-redis-1 redis-cli

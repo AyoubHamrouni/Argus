@@ -1,7 +1,7 @@
 # ============================================================================
 # Zeek Network Security Monitor Configuration
 # ============================================================================
-# Production-ready configuration for AI-SOC passive network monitoring
+# Production-ready configuration for Argus passive network monitoring
 # Reference: https://docs.zeek.org/en/master/quickstart.html
 
 ##! Local site policy. Customize as appropriate.
