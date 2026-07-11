@@ -58,7 +58,7 @@ jobs:
             type=sha,prefix={{branch}}-
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         if: hashFiles(format('services/{0}/Dockerfile', matrix.service)) != ''
         with:
           context: services/${{ matrix.service }}
