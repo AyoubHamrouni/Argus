@@ -2,7 +2,7 @@
 Browser Tests - Dashboard UI Testing with Playwright
 Cross-browser testing for Wazuh, Grafana, and TheHive dashboards
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 

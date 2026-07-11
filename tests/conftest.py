@@ -2,7 +2,7 @@
 Pytest Configuration - Argus Testing Framework
 Provides fixtures and configuration for all test suites
 
-Author: LOVELESS (Elite QA Specialist)
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """

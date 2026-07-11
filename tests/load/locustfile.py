@@ -2,7 +2,7 @@
 Load Testing - Locust Configuration
 Performance and stress testing for Argus services
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 

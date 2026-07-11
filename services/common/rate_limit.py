@@ -5,7 +5,7 @@ AI-Augmented SOC - Production Security
 Implements sliding window rate limiting for API endpoints.
 Prevents DoS attacks and ensures fair resource usage.
 
-Author: LOVELESS (Elite Security Specialist)
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-SECURITY
 Date: 2025-10-23
 """

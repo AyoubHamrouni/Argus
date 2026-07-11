@@ -239,7 +239,7 @@ docker exec wazuh-manager cat /var/ossec/etc/ossec.conf | grep -A 20 integration
 
 # Verify the integration section includes:
 # <integration>
-#   <name>custom-ai-soc</name>
+#   <name>argus</name>
 #   <hook_url>http://ml-inference:8500/api/v1/alerts</hook_url>
 #   <level>12</level>
 #   <alert_format>json</alert_format>

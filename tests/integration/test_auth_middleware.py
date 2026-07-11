@@ -3,7 +3,7 @@ Integration Tests - Auth Middleware
 Tests JWT, API key auth, middleware enforcement, and scope checks
 with zero external dependencies.
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 """
 
 import secrets

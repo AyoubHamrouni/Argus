@@ -2,7 +2,7 @@
 End-to-End Tests - Complete System Workflows
 Tests full alert-to-response workflows across the entire Argus platform
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """

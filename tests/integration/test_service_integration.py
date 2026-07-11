@@ -2,7 +2,7 @@
 Integration Tests - Service-to-Service Communication
 Tests complete workflows across multiple services
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """

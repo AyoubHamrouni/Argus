@@ -19,7 +19,7 @@
 #   - Run comprehensive health checks
 #   - Display access URLs and credentials
 #
-# Author: ZHADYZ DevOps Orchestrator
+# Author: Ayoub Hamrouni
 # Version: 1.0.0
 # Date: 2025-10-23
 # ============================================================================
@@ -77,7 +77,7 @@ function Write-Banner {
     Write-Host "║        Version $Script:VERSION                                              ║" -ForegroundColor Cyan
     Write-Host "║                                                                      ║" -ForegroundColor Cyan
     Write-Host "║        AI-Augmented Security Operations Center                      ║" -ForegroundColor Cyan
-    Write-Host "║        Powered by ZHADYZ DevOps Intelligence                        ║" -ForegroundColor Cyan
+    Write-Host "║        Powered by Argus                        ║" -ForegroundColor Cyan
     Write-Host "║                                                                      ║" -ForegroundColor Cyan
     Write-Host "╚══════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""

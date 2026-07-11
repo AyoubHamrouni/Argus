@@ -2,7 +2,7 @@
 Unit Tests - ML Inference API
 Tests machine learning model inference using mocked dependencies.
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """

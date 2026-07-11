@@ -3,7 +3,7 @@
 Test Validation Script - Argus
 Validates test infrastructure and generates quality report
 
-Author: LOVELESS
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 

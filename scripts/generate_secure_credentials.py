@@ -3,7 +3,7 @@
 Generate Secure Credentials for Argus Production Deployment
 Replaces all default passwords with cryptographically strong credentials
 
-Author: LOVELESS (Elite Security Specialist)
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-SECURITY
 Date: 2025-10-23
 """

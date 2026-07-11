@@ -2,7 +2,7 @@
 Security Tests - OWASP Top 10 Validation
 Comprehensive security testing against OWASP Top 10 vulnerabilities
 
-Author: LOVELESS (Elite QA Specialist)
+Author: Ayoub Hamrouni
 Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """

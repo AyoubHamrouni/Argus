@@ -1,5 +1,5 @@
 """
-Security Utility Testing - LOVELESS Audit
+Security Utility Testing - Ayoub Hamrouni
 Tests security.py functions against known attack patterns
 """
 
@@ -104,7 +104,7 @@ def test_length_validation():
 
 if __name__ == "__main__":
     print("="*70)
-    print("LOVELESS SECURITY UTILITY TESTING")
+    print("ARGUS SECURITY UTILITY TESTING")
     print("="*70)
 
     test_sql_injection()
