@@ -1,7 +1,7 @@
 # Alert Triage Service - Dockerfile
 # AI-Augmented SOC - Production Grade
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Metadata
 LABEL maintainer="abdul.bari8019@coyote.csusb.edu"
