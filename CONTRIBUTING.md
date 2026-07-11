@@ -1,4 +1,4 @@
-# Contributing to AI-SOC
+# Contributing to Argus
 
 Thank you for your interest in contributing to AI-Augmented Security Operations Center! This document provides guidelines and instructions for contributing.
 
@@ -21,7 +21,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/AI_SOC.git`
+2. Clone your fork: `git clone https://github.com/your-username/Argus.git`
 3. Create a feature branch: `git checkout -b feature/your-feature-name`
 4. Make your changes
 5. Run tests and linting
@@ -40,8 +40,8 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ```bash
 # Clone the repository
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
 
 # Create a virtual environment
 python -m venv venv
@@ -222,7 +222,7 @@ pytest tests/security/ -v -m security
 
 ## Reporting Bugs
 
-Use the [Bug Report](https://github.com/zhadyz/AI_SOC/issues/new?template=bug_report.md) template. Include:
+Use the [Bug Report](https://github.com/AyoubHamrouni/Argus/issues/new?template=bug_report.md) template. Include:
 
 - Clear description of the issue
 - Steps to reproduce
@@ -232,7 +232,7 @@ Use the [Bug Report](https://github.com/zhadyz/AI_SOC/issues/new?template=bug_re
 
 ## Suggesting Features
 
-Use the [Feature Request](https://github.com/zhadyz/AI_SOC/issues/new?template=feature_request.md) template. Include:
+Use the [Feature Request](https://github.com/AyoubHamrouni/Argus/issues/new?template=feature_request.md) template. Include:
 
 - Problem statement
 - Proposed solution
@@ -241,8 +241,8 @@ Use the [Feature Request](https://github.com/zhadyz/AI_SOC/issues/new?template=f
 
 ## Questions?
 
-Open a [Discussion](https://github.com/zhadyz/AI_SOC/discussions) or reach out to the maintainers.
+Open a [Discussion](https://github.com/AyoubHamrouni/Argus/discussions) or reach out to the maintainers.
 
 ---
 
-Thank you for contributing to AI-SOC!
+Thank you for contributing to Argus!

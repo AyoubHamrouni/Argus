@@ -51,7 +51,7 @@ RETRAIN_THRESHOLD = int(os.getenv("RETRAIN_THRESHOLD", "100"))
 MIN_IMPROVEMENT = float(os.getenv("MIN_IMPROVEMENT", "0.005"))  # 0.5% accuracy improvement
 DATABASE_URL = os.getenv(
     "FEEDBACK_DATABASE_URL",
-    "postgresql://ai_soc:ai_soc_password@postgres:5432/ai_soc",
+    "postgresql://argus:argus_password@postgres:5432/argus",
 )
 ML_INFERENCE_URL = os.getenv("ML_INFERENCE_URL", "http://ml-inference:8000")
 
@@ -349,13 +349,13 @@ def trigger_reload():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AI-SOC Continuous Retraining Pipeline")
+    parser = argparse.ArgumentParser(description="Argus Continuous Retraining Pipeline")
     parser.add_argument("--force", action="store_true", help="Force retrain")
     parser.add_argument("--evaluate-only", action="store_true", help="Evaluate only")
     args = parser.parse_args()
 
     logger.info("=" * 60)
-    logger.info("AI-SOC Continuous Retraining Pipeline")
+    logger.info("Argus Continuous Retraining Pipeline")
     logger.info("=" * 60)
 
     # Step 1: Load feedback data

@@ -1,4 +1,4 @@
-# AI-SOC Development Environment
+# Argus Development Environment
 # Supporting services for data analysis, caching, and container management
 # Compatible with: Docker Engine 23.0.15+, Docker Compose 2.20.2+
 
@@ -12,7 +12,7 @@ services:
   # Minimum: 512MB RAM | Recommended: 2GB RAM
   postgres:
     image: postgres:16.2-alpine
-    container_name: ai-soc-postgres
+    container_name: argus-postgres
     hostname: postgres
     restart: unless-stopped
 
@@ -74,7 +74,7 @@ services:
   # Minimum: 256MB RAM | Recommended: 1GB RAM
   redis:
     image: redis:7.2.4-alpine
-    container_name: ai-soc-redis
+    container_name: argus-redis
     hostname: redis
     restart: unless-stopped
 
@@ -126,7 +126,7 @@ services:
   # Minimum: 2GB RAM | Recommended: 4GB RAM
   jupyter:
     image: jupyter/scipy-notebook:python-3.11
-    container_name: ai-soc-jupyter
+    container_name: argus-jupyter
     hostname: jupyter
     restart: unless-stopped
     user: root
@@ -198,7 +198,7 @@ services:
   # Minimum: 256MB RAM | Recommended: 512MB RAM
   portainer:
     image: portainer/portainer-ce:2.19.5-alpine
-    container_name: ai-soc-portainer
+    container_name: argus-portainer
     hostname: portainer
     restart: unless-stopped
 
@@ -245,7 +245,7 @@ services:
   # Minimum: 128MB RAM | Recommended: 256MB RAM
   adminer:
     image: adminer:4.8.1-standalone
-    container_name: ai-soc-adminer
+    container_name: argus-adminer
     hostname: adminer
     restart: unless-stopped
     profiles: ["optional"]  # Only start if explicitly requested
@@ -288,7 +288,7 @@ services:
   # Minimum: 128MB RAM | Recommended: 256MB RAM
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: ai-soc-redis-commander
+    container_name: argus-redis-commander
     hostname: redis-commander
     restart: unless-stopped
     profiles: ["optional"]  # Only start if explicitly requested
@@ -398,9 +398,9 @@ volumes:
 # docker-compose -f dev-environment.yml down
 #
 # BACKUP POSTGRESQL:
-# docker exec ai-soc-postgres pg_dump -U aisoc aisoc_metadata > backup.sql
+# docker exec argus-postgres pg_dump -U aisoc aisoc_metadata > backup.sql
 #
 # RESTORE POSTGRESQL:
-# docker exec -i ai-soc-postgres psql -U aisoc aisoc_metadata < backup.sql
+# docker exec -i argus-postgres psql -U aisoc aisoc_metadata < backup.sql
 #
 # ==============================================================================

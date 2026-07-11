@@ -75,7 +75,7 @@ class JWTAuthManager:
     JWT Authentication Manager.
 
     Handles token generation, validation, API key management,
-    and password hashing for all AI-SOC services.
+    and password hashing for all Argus services.
     """
 
     def __init__(

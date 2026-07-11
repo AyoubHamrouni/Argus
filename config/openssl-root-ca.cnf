@@ -7,9 +7,9 @@ prompt = no
 C = US
 ST = California
 L = Los Angeles
-O = AI-SOC
+O = Argus
 OU = Security
-CN = AI-SOC Root CA
+CN = Argus Root CA
 
 [v3_ca]
 subjectKeyIdentifier = hash

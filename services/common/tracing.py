@@ -1,4 +1,4 @@
-"""OpenTelemetry distributed tracing for AI-SOC services."""
+"""OpenTelemetry distributed tracing for Argus services."""
 
 import logging
 import os

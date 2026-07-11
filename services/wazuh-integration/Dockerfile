@@ -8,7 +8,7 @@
 FROM python:3.11-slim
 
 # Metadata
-LABEL maintainer="AI-SOC Team <z@onyxlab.ai>"
+LABEL maintainer="Ayoub Hamrouni"
 LABEL description="Wazuh-AI Integration Service: Intelligent alert webhook receiver"
 LABEL version="1.0.0"
 

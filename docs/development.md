@@ -16,8 +16,8 @@ Quick summary:
 
 ```bash
 # Clone and set up
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
 python -m venv .venv
 source .venv/bin/activate
 pip install -r tests/requirements.txt

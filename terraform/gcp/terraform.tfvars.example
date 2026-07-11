@@ -9,5 +9,5 @@ db_allocated_storage = 50
 db_password         = "CHANGE_ME"
 
 labels = {
-  Project = "AI-SOC"
+  Project = "Argus"
 }

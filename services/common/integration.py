@@ -5,8 +5,8 @@ Service Integration Utilities
 Common utilities for inter-service communication, error handling,
 and resilience patterns.
 
-Author: AI-SOC Team
-Mission: OPERATION PIPELINE-INTEGRATION
+Author: Ayoub Hamrouni
+Mission: OPERATION ARGUS-PIPELINE
 """
 
 import asyncio

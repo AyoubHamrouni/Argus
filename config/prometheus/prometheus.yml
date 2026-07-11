@@ -1,7 +1,7 @@
 # ============================================================================
-# Prometheus Configuration for AI-SOC
+# Prometheus Configuration for Argus
 # ============================================================================
-# This configuration monitors all AI-SOC components:
+# This configuration monitors all Argus components:
 # - SIEM Stack (Wazuh)
 # - SOAR Stack (TheHive, Cortex, Shuffle)
 # - AI Services (ML Inference, Alert Triage, RAG)
@@ -13,7 +13,7 @@ global:
   scrape_timeout: 10s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'ai-soc'
+    cluster: 'argus'
     environment: 'production'
 
 # AlertManager configuration

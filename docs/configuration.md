@@ -22,9 +22,9 @@ cp .env.example .env
 |----------|---------|-------------|
 | `POSTGRES_HOST` | `postgres` | PostgreSQL hostname |
 | `POSTGRES_PORT` | `5432` | PostgreSQL port |
-| `POSTGRES_DB` | `ai_soc` | Database name |
+| `POSTGRES_DB` | `argus` | Database name |
 | `POSTGRES_USER` | `aisoc_admin` | Database user |
-| `POSTGRES_PASSWORD` | `ai_soc_password` | Database password |
+| `POSTGRES_PASSWORD` | `argus_password` | Database password |
 
 ### Authentication
 

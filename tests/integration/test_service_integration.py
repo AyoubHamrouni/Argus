@@ -3,7 +3,7 @@ Integration Tests - Service-to-Service Communication
 Tests complete workflows across multiple services
 
 Author: LOVELESS
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """
 

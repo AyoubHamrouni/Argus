@@ -1,15 +1,15 @@
 @echo off
 REM ===================================================================
-REM AI-SOC One-Click Launcher
+REM Argus One-Click Launcher
 REM ===================================================================
-REM Double-click this file to start the AI-SOC Control Center
+REM Double-click this file to start the Argus Control Center
 REM ===================================================================
 
-title AI-SOC Launcher
+title Argus Launcher
 
 echo.
 echo ========================================================
-echo    AI-SOC Control Center - Starting...
+echo    Argus Control Center - Starting...
 echo ========================================================
 echo.
 echo Checking Python installation...
@@ -33,8 +33,8 @@ echo Installing required packages...
 python -m pip install --quiet flask
 
 echo.
-echo Launching AI-SOC Control Center...
+echo Launching Argus Control Center...
 echo.
-python AI-SOC-Launcher.py
+python argus-launcher.py
 
 pause

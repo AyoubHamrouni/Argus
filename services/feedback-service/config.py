@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     service_name: str = "feedback-service"
     service_version: str = "1.0.0"
-    database_url: str = "postgresql+asyncpg://ai_soc:ai_soc_password@postgres:5432/ai_soc"
+    database_url: str = "postgresql+asyncpg://argus:argus_password@postgres:5432/argus"
     log_level: str = "INFO"
     host: str = "0.0.0.0"
     port: int = 8000

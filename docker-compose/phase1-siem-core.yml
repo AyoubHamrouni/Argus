@@ -1,4 +1,4 @@
-# AI-SOC Phase 1: Core SIEM Stack
+# Argus Phase 1: Core SIEM Stack
 # Production-ready deployment of Wazuh, OpenSearch, Suricata, and Zeek
 # Based on: https://github.com/wazuh/wazuh-docker (single-node configuration)
 # Compatible with: Docker Engine 23.0.15+, Docker Compose 2.20.2+

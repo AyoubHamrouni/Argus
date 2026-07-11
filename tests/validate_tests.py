@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Test Validation Script - AI-SOC
+Test Validation Script - Argus
 Validates test infrastructure and generates quality report
 
 Author: LOVELESS
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 
 Usage:
@@ -158,7 +158,7 @@ def run_test_discovery() -> Dict[str, int]:
 def generate_report() -> None:
     """Generate validation report"""
     print("=" * 70)
-    print("AI-SOC TEST INFRASTRUCTURE VALIDATION")
+    print("Argus TEST INFRASTRUCTURE VALIDATION")
     print("=" * 70)
     print()
 

@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug to help us improve AI-SOC
+about: Report a bug to help us improve Argus
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -37,7 +37,7 @@ If applicable, add screenshots or paste relevant log output to help explain the 
 - Python version: [e.g., 3.11.5]
 - Docker version: [e.g., 24.0.7]
 - Docker Compose version: [e.g., v2.23.0]
-- AI-SOC version/commit: [e.g., v1.0.0 or commit hash]
+- Argus version/commit: [e.g., v1.0.0 or commit hash]
 
 ## Additional Context
 

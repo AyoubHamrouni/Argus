@@ -10,7 +10,7 @@ feedback patterns.
 Context is strictly supplementary — every fetch is timeboxed and any
 failure results in empty string, never a blocked triage.
 
-Author: AI-SOC Team
+Author: Ayoub Hamrouni
 """
 
 import logging

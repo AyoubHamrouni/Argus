@@ -642,7 +642,7 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "ai-soc",
+    "argus",
     "overview"
   ],
   "templating": {
@@ -654,8 +654,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "AI-SOC Overview",
-  "uid": "ai-soc-overview",
+  "title": "Argus Overview",
+  "uid": "argus-overview",
   "version": 1,
   "weekStart": ""
 }

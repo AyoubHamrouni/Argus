@@ -1,6 +1,6 @@
-# Testing Framework Requirements for AI-SOC
+# Testing Framework Requirements for Argus
 # Author: LOVELESS
-# Mission: OPERATION TEST-FORTRESS
+# Mission: OPERATION ARGUS-TEST
 # Date: 2025-10-22
 
 # Core Testing

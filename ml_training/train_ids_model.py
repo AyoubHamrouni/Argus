@@ -8,7 +8,7 @@ with options for multi-class attack categorization.
 Architecture: Random Forest, XGBoost, Decision Tree
 Target Metrics: >99% accuracy, <100ms inference latency, <1% false positive rate
 
-Author: AI-SOC Team
+Author: Ayoub Hamrouni
 """
 
 import os
@@ -455,8 +455,8 @@ def generate_evaluation_report(results, label_encoder, output_path):
     report = []
     report.append("# CICIDS2017 Baseline Models - Evaluation Report\n")
     report.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    report.append(f"**Mission:** OPERATION ML-BASELINE\n")
-    report.append(f"**Agent:** AI-SOC Team\n\n")
+    report.append(f"**Mission:** OPERATION ARGUS-ML\n")
+    report.append(f"**Agent:** Ayoub Hamrouni\n\n")
 
     report.append("## Executive Summary\n\n")
     report.append("This report presents the performance evaluation of three baseline machine learning models ")
@@ -577,8 +577,8 @@ def main():
     print("\n" + "="*80)
     print("CICIDS2017 INTRUSION DETECTION - ML TRAINING PIPELINE")
     print("="*80)
-    print(f"Mission: OPERATION ML-BASELINE")
-    print(f"Agent: AI-SOC Team")
+    print(f"Mission: OPERATION ARGUS-ML")
+    print(f"Agent: Ayoub Hamrouni")
     print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*80)
 

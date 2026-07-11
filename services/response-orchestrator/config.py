@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     service_version: str = "1.0.0"
 
     # Database
-    database_url: str = "postgresql+asyncpg://ai_soc:ai_soc_password@postgres:5432/ai_soc"
+    database_url: str = "postgresql+asyncpg://argus:argus_password@postgres:5432/argus"
 
     # Upstream Service URLs
     correlation_engine_url: str = "http://correlation-engine:8000"

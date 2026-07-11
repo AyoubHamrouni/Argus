@@ -2,15 +2,15 @@
 
 An open-source platform that combines machine learning intrusion detection, LLM-powered alert triage, retrieval-augmented threat intelligence, and automated response orchestration — all running locally.
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/zhadyz/AI_SOC/blob/main/LICENSE)
-[![CI](https://github.com/zhadyz/AI_SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/zhadyz/AI_SOC/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/zhadyz/AI_SOC/branch/main/graph/badge.svg)](https://codecov.io/gh/zhadyz/AI_SOC)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/AyoubHamrouni/Argus/blob/main/LICENSE)
+[![CI](https://github.com/AyoubHamrouni/Argus/actions/workflows/ci.yml/badge.svg)](https://github.com/AyoubHamrouni/Argus/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/AyoubHamrouni/Argus/branch/main/graph/badge.svg)](https://codecov.io/gh/AyoubHamrouni/Argus)
 
 ---
 
 ## What This Does
 
-AI-SOC answers a single operational question:
+Argus answers a single operational question:
 
 > Given a noisy stream of alerts and a modeled environment, which threats matter, how might an attacker proceed, and what defensive action should be considered first?
 
@@ -103,10 +103,10 @@ flowchart TB
 ### Deploy
 
 ```bash
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
 cp .env.example .env
-./deploy-ai-soc.sh
+./deploy-argus.sh
 ```
 
 Or deploy manually:
@@ -120,7 +120,7 @@ docker compose -f docker-compose/monitoring-stack.yml up -d
 ### Stop
 
 ```bash
-./deploy-ai-soc.sh --stop
+./deploy-argus.sh --stop
 ```
 
 ---
@@ -166,4 +166,4 @@ docker compose -f docker-compose/monitoring-stack.yml up -d
 
 ## License
 
-Apache License 2.0. See [LICENSE](https://github.com/zhadyz/AI_SOC/blob/main/LICENSE).
+Apache License 2.0. See [LICENSE](https://github.com/AyoubHamrouni/Argus/blob/main/LICENSE).

@@ -1,6 +1,6 @@
 # Research Context
 
-AI-SOC is informed by published research on AI/ML integration in security operations. The platform implements and validates several themes from the academic literature:
+Argus is informed by published research on AI/ML integration in security operations. The platform implements and validates several themes from the academic literature:
 
 - **Human-AI collaboration** rather than blind automation
 - **Alert triage and summarization** using local LLMs

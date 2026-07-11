@@ -6,16 +6,16 @@ Local AI services, machine-learning intrusion detection, alert enrichment, attac
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Docker Compose](https://img.shields.io/badge/docker-compose-blue.svg)](https://docs.docker.com/compose/)
 [![Dataset: CICIDS2017](https://img.shields.io/badge/dataset-CICIDS2017-green.svg)](datasets/CICIDS2017/README.md)
-[![CI](https://github.com/zhadyz/AI_SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/zhadyz/AI_SOC/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/zhadyz/AI_SOC/branch/main/graph/badge.svg)](https://codecov.io/gh/zhadyz/AI_SOC)
+[![CI](https://github.com/AyoubHamrouni/Argus/actions/workflows/ci.yml/badge.svg)](https://github.com/AyoubHamrouni/Argus/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/AyoubHamrouni/Argus/branch/main/graph/badge.svg)](https://codecov.io/gh/AyoubHamrouni/Argus)
 
-AI-SOC is a research-grade implementation of an AI-assisted security operations center. It combines trained IDS models, local LLM alert triage, retrieval over security knowledge, Wazuh integration, incident correlation, swarm-scale attack simulation, and a prototype response orchestrator.
+Argus is a research-grade implementation of an AI-assisted security operations center. It combines trained IDS models, local LLM alert triage, retrieval over security knowledge, Wazuh integration, incident correlation, swarm-scale attack simulation, and a prototype response orchestrator.
 
 The project is intentionally local-first: security event data is processed through local services and Ollama-backed LLM inference rather than a hosted LLM API.
 
 ## What This Is
 
-AI-SOC answers one operational question:
+Argus answers one operational question:
 
 > Given a noisy stream of alerts and a modeled environment, which threats matter, how might an attacker proceed, and what defensive action should be considered first?
 
@@ -45,7 +45,7 @@ This is not a drop-in production SOC. It is a substantial research implementatio
 | Swarm simulation | Research prototype | Monte Carlo leader/follower simulation with attacker and defender archetypes; experiment artifacts included. |
 | Response orchestrator | Prototype implemented | D3FEND mapping, plan generation, approval tiers, execution workflow, verification loop. |
 | Firewall, EDR, identity adapters | Stubbed | Interfaces exist; production vendor adapters still need real API implementations. |
-| Full deployment script | Implemented | `deploy-ai-soc.sh` and `deploy-ai-soc.ps1` orchestrate SIEM, AI services, and monitoring. |
+| Full deployment script | Implemented | `deploy-argus.sh` and `deploy-argus.ps1` orchestrate SIEM, AI services, and monitoring. |
 
 ## Architecture
 
@@ -159,17 +159,17 @@ flowchart TB
 Linux/macOS:
 
 ```bash
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
-./deploy-ai-soc.sh
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
+./deploy-argus.sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
-.\deploy-ai-soc.ps1
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
+.\deploy-argus.ps1
 ```
 
 The deployment script performs three phases:
@@ -202,13 +202,13 @@ docker compose -f docker-compose/phase1-siem-core-windows.yml up -d
 ### Stop the stack
 
 ```bash
-./deploy-ai-soc.sh --stop
+./deploy-argus.sh --stop
 ```
 
 or:
 
 ```powershell
-.\deploy-ai-soc.ps1 -Stop
+.\deploy-argus.ps1 -Stop
 ```
 
 ## Service URLs
@@ -461,7 +461,7 @@ Current testing notes:
 
 ## Security Notes
 
-AI-SOC is built for a lab/research environment unless hardened further.
+Argus is built for a lab/research environment unless hardened further.
 
 Before production-like use:
 

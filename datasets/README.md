@@ -1,6 +1,6 @@
 # Datasets for AI-Augmented SOC
 
-This directory contains documentation and scripts for acquiring and processing cybersecurity datasets used in the AI-SOC project.
+This directory contains documentation and scripts for acquiring and processing cybersecurity datasets used in the Argus project.
 
 ## Primary Datasets
 

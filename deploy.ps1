@@ -1,5 +1,5 @@
 # ============================================================================
-# AI-SOC ONE-CLICK DEPLOYMENT SYSTEM (Windows PowerShell)
+# Argus ONE-CLICK DEPLOYMENT SYSTEM (Windows PowerShell)
 # ============================================================================
 # Master deployment script for AI-Augmented Security Operations Center
 #
@@ -73,7 +73,7 @@ function Write-Banner {
     Write-Host ""
     Write-Host "╔══════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "║                                                                      ║" -ForegroundColor Cyan
-    Write-Host "║        AI-SOC ONE-CLICK DEPLOYMENT SYSTEM                           ║" -ForegroundColor Cyan
+    Write-Host "║        Argus ONE-CLICK DEPLOYMENT SYSTEM                           ║" -ForegroundColor Cyan
     Write-Host "║        Version $Script:VERSION                                              ║" -ForegroundColor Cyan
     Write-Host "║                                                                      ║" -ForegroundColor Cyan
     Write-Host "║        AI-Augmented Security Operations Center                      ║" -ForegroundColor Cyan
@@ -295,7 +295,7 @@ function Initialize-Passwords {
     $PasswordFile = Join-Path $Script:BackupDir "passwords_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
 
     $Content = @"
-# AI-SOC Generated Passwords
+# Argus Generated Passwords
 # Generated: $(Get-Date)
 # KEEP THIS FILE SECURE!
 
@@ -547,7 +547,7 @@ function Test-ApiEndpoints {
 function Invoke-Rollback {
     Write-Step "Rolling Back Deployment"
 
-    Write-Log -Level "WARNING" -Message "This will stop and remove all AI-SOC containers"
+    Write-Log -Level "WARNING" -Message "This will stop and remove all Argus containers"
     $Confirm = Read-Host "Are you sure? (yes/no)"
 
     if ($Confirm -ne "yes") {
@@ -645,7 +645,7 @@ function Main {
         New-Item -ItemType Directory -Path $Script:LogDir -Force | Out-Null
     }
 
-    Write-Log -Level "INFO" -Message "AI-SOC Deployment Started"
+    Write-Log -Level "INFO" -Message "Argus Deployment Started"
     Write-Log -Level "INFO" -Message "Mode: $Mode"
     Write-Log -Level "INFO" -Message "User: $env:USERNAME"
 

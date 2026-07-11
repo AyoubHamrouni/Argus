@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# AI-SOC Configuration Setup Script
+# Argus Configuration Setup Script
 # ============================================================================
 # Ensures all necessary configuration files and directories exist for deployment
 # Automatically creates missing configs with production-ready defaults
@@ -21,7 +21,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}================================${NC}"
-echo -e "${BLUE}AI-SOC Configuration Setup${NC}"
+echo -e "${BLUE}Argus Configuration Setup${NC}"
 echo -e "${BLUE}================================${NC}\n"
 
 # Get script directory and project root

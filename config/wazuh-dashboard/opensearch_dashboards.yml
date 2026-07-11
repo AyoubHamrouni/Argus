@@ -1,7 +1,7 @@
 # ============================================================================
 # Wazuh Dashboard (OpenSearch Dashboards) Configuration
 # ============================================================================
-# Production-ready configuration for AI-SOC SIEM visualization
+# Production-ready configuration for Argus SIEM visualization
 # Reference: https://documentation.wazuh.com/current/installation-guide/wazuh-dashboard/index.html
 
 server.host: "0.0.0.0"

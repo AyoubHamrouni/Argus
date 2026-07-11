@@ -1,6 +1,6 @@
 # Pre-trained Model Artifacts
 
-This directory contains trained ML model artifacts for the AI-SOC Inference API.
+This directory contains trained ML model artifacts for the Argus Inference API.
 
 **These files are excluded from the git repository** via `.gitignore` for security (pickle deserialization risk) and repository size reasons.
 

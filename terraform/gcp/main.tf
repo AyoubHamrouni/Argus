@@ -1,6 +1,6 @@
 locals {
   common_tags = merge(var.tags, {
-    Project     = "AI-SOC"
+    Project     = "Argus"
     Environment = var.environment
     ManagedBy   = "Terraform"
     Cloud       = "GCP"

@@ -3,7 +3,7 @@ Unit Tests - Alert Triage Service
 Tests core functionality of the LLM-powered alert triage service
 
 Author: LOVELESS
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """
 

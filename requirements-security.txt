@@ -1,4 +1,4 @@
-# Security Dependencies for AI-SOC Production
+# Security Dependencies for Argus Production
 # Install with: pip install -r requirements-security.txt
 
 # Authentication & JWT

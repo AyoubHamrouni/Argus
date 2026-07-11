@@ -1,5 +1,5 @@
 # ============================================================================
-# AI-SOC Network Analysis Stack (Linux Only)
+# Argus Network Analysis Stack (Linux Only)
 # ============================================================================
 # Components:
 # - Suricata: IDS/IPS for network threat detection
@@ -240,7 +240,7 @@ volumes:
 # WINDOWS ALTERNATIVE:
 # For Windows-native packet capture and analysis:
 # 1. Use Npcap + Wireshark for packet capture
-# 2. Export PCAPs and analyze in AI-SOC ML pipeline
+# 2. Export PCAPs and analyze in Argus ML pipeline
 # 3. Deploy Suricata/Zeek on Linux VM and forward to Windows SIEM
 #
 # RESOURCE REQUIREMENTS:

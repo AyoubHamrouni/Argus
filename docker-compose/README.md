@@ -1,4 +1,4 @@
-# AI-SOC Docker Infrastructure Documentation
+# Argus Docker Infrastructure Documentation
 
 **Version:** 1.0.0
 **Last Updated:** 2025-10-13
@@ -28,7 +28,7 @@
 
 ## Overview
 
-The AI-SOC Docker infrastructure provides a production-ready Security Operations Center (SOC) platform combining:
+The Argus Docker infrastructure provides a production-ready Security Operations Center (SOC) platform combining:
 
 - **SIEM Core:** Wazuh Manager, Indexer (OpenSearch), and Dashboard
 - **Network Monitoring:** Suricata (IDS/IPS) and Zeek (passive analysis)
@@ -42,7 +42,7 @@ All services are containerized, orchestrated with Docker Compose, and configured
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        AI-SOC ARCHITECTURE                           │
+│                        Argus ARCHITECTURE                           │
 └─────────────────────────────────────────────────────────────────────┘
 
                          INTERNET / NETWORK TRAFFIC
@@ -220,7 +220,7 @@ docker ps
 ### Step 1: Clone Repository and Navigate to Directory
 
 ```bash
-cd /path/to/AI_SOC
+cd /path/to/Argus
 ```
 
 ### Step 2: Configure Environment Variables
@@ -868,7 +868,7 @@ work_mem = 16MB
 
 ```bash
 #!/bin/bash
-# backup-ai-soc.sh
+# backup-argus.sh
 
 BACKUP_DIR="./backups/$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$BACKUP_DIR"
@@ -877,7 +877,7 @@ mkdir -p "$BACKUP_DIR"
 docker run --rm -v wazuh-indexer-data:/data -v "$BACKUP_DIR":/backup alpine tar czf /backup/indexer.tar.gz /data
 
 # Backup PostgreSQL
-docker exec ai-soc-postgres pg_dump -U aisoc aisoc_metadata | gzip > "$BACKUP_DIR/postgres.sql.gz"
+docker exec argus-postgres pg_dump -U aisoc aisoc_metadata | gzip > "$BACKUP_DIR/postgres.sql.gz"
 
 # Backup configurations
 tar czf "$BACKUP_DIR/configs.tar.gz" docker-compose/config .env
@@ -892,7 +892,7 @@ echo "Backup completed: $BACKUP_DIR"
 docker run --rm -v wazuh-indexer-data:/data -v "$BACKUP_DIR":/backup alpine tar xzf /backup/indexer.tar.gz -C /
 
 # Restore PostgreSQL
-zcat "$BACKUP_DIR/postgres.sql.gz" | docker exec -i ai-soc-postgres psql -U aisoc aisoc_metadata
+zcat "$BACKUP_DIR/postgres.sql.gz" | docker exec -i argus-postgres psql -U aisoc aisoc_metadata
 
 # Restore configurations
 tar xzf "$BACKUP_DIR/configs.tar.gz"
@@ -908,14 +908,14 @@ tar xzf "$BACKUP_DIR/configs.tar.gz"
 - **Zeek:** https://docs.zeek.org/
 - **Docker Compose:** https://docs.docker.com/compose/
 
-### AI-SOC Project
-- **GitHub Repository:** https://github.com/zhadyz/AI_SOC
+### Argus Project
+- **GitHub Repository:** https://github.com/AyoubHamrouni/Argus
 - **ROADMAP:** See `ROADMAP.md` in project root
 - **Issue Tracker:** GitHub Issues
 
 ### Support
-- **GitHub Issues:** https://github.com/zhadyz/AI_SOC/issues
-- **GitHub Discussions:** https://github.com/zhadyz/AI_SOC/discussions
+- **GitHub Issues:** https://github.com/AyoubHamrouni/Argus/issues
+- **GitHub Discussions:** https://github.com/AyoubHamrouni/Argus/discussions
 
 ---
 

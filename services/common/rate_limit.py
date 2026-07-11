@@ -6,7 +6,7 @@ Implements sliding window rate limiting for API endpoints.
 Prevents DoS attacks and ensures fair resource usage.
 
 Author: LOVELESS (Elite Security Specialist)
-Mission: OPERATION SECURITY-FORTRESS
+Mission: OPERATION ARGUS-SECURITY
 Date: 2025-10-23
 """
 

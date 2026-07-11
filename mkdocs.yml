@@ -1,9 +1,9 @@
-site_name: AI-SOC Documentation
-site_url: https://github.com/zhadyz/AI_SOC
+site_name: Argus Documentation
+site_url: https://github.com/AyoubHamrouni/Argus
 site_description: AI-Augmented Security Operations Center — ML intrusion detection, LLM alert triage, RAG threat intelligence, and automated response orchestration
 
-repo_name: zhadyz/AI_SOC
-repo_url: https://github.com/zhadyz/AI_SOC
+repo_name: AyoubHamrouni/Argus
+repo_url: https://github.com/AyoubHamrouni/Argus
 edit_uri: edit/main/docs/
 
 theme:
@@ -32,7 +32,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/zhadyz/AI_SOC
+      link: https://github.com/AyoubHamrouni/Argus
 
 markdown_extensions:
   - pymdownx.highlight:

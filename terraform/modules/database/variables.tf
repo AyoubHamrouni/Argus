@@ -21,7 +21,7 @@ variable "subnet_ids" {
 variable "db_name" {
   description = "Database name"
   type        = string
-  default     = "ai_soc"
+  default     = "argus"
 }
 
 variable "db_user" {

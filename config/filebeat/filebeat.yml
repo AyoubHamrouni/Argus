@@ -1,5 +1,5 @@
 # ============================================================================
-# Filebeat Configuration for AI-SOC
+# Filebeat Configuration for Argus
 # ============================================================================
 # Forwards Suricata and Zeek logs to Wazuh Indexer (OpenSearch)
 # Reference: https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-reference-yml.html
@@ -104,7 +104,7 @@ processors:
       target: ''
       fields:
         environment: development
-        project: ai-soc
+        project: argus
 
 # Logging
 logging.level: info

@@ -7,7 +7,7 @@ prompt = no
 C = US
 ST = California
 L = Los Angeles
-O = AI-SOC
+O = Argus
 OU = Security
 CN = wazuh-manager
 

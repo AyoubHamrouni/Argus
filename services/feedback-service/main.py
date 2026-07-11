@@ -112,7 +112,7 @@ def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)
 
 app = FastAPI(
     title="Feedback Service",
-    description="Alert persistence and analyst feedback for the AI-SOC learning flywheel",
+    description="Alert persistence and analyst feedback for the Argus learning flywheel",
     version=settings.service_version,
     lifespan=lifespan,
     dependencies=[Depends(verify_api_key)]
@@ -323,7 +323,7 @@ async def root():
     return {
         "service": settings.service_name,
         "version": settings.service_version,
-        "description": "Alert persistence and analyst feedback for the AI-SOC learning flywheel",
+        "description": "Alert persistence and analyst feedback for the Argus learning flywheel",
         "endpoints": {
             "store_alert": "POST /alerts",
             "query_alerts": "GET /alerts",

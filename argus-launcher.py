@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-AI-SOC Graphical Launcher
+Argus Graphical Launcher
 ==========================
 Simplified graphical interface for the AI Security Operations Center platform
 
 Usage:
-    Execute this file via double-click to launch the AI-SOC control interface
+    Execute this file via double-click to launch the Argus control interface
     OR
-    python AI-SOC-Launcher.py
+    python argus-launcher.py
 """
 
 import tkinter as tk
@@ -23,7 +23,7 @@ from pathlib import Path
 class AISOCLauncher:
     def __init__(self, root):
         self.root = root
-        self.root.title("AI-SOC Control Center")
+        self.root.title("Argus Control Center")
         self.root.geometry("900x700")
         self.root.resizable(True, True)
 
@@ -94,7 +94,7 @@ class AISOCLauncher:
 
         self.start_button = tk.Button(
             button_frame,
-            text="▶ START AI-SOC",
+            text="▶ START Argus",
             command=self.start_system,
             bg="#27ae60",
             fg="white",
@@ -108,7 +108,7 @@ class AISOCLauncher:
 
         self.stop_button = tk.Button(
             button_frame,
-            text="⏹ STOP AI-SOC",
+            text="⏹ STOP Argus",
             command=self.stop_system,
             bg="#e74c3c",
             fg="white",
@@ -157,7 +157,7 @@ class AISOCLauncher:
             borderwidth=2
         )
         self.services_text.pack(fill=tk.BOTH, expand=True)
-        self.services_text.insert(tk.END, "Click START to launch AI-SOC services...\n")
+        self.services_text.insert(tk.END, "Click START to launch Argus services...\n")
         self.services_text.config(state=tk.DISABLED)
 
         # Log Output
@@ -181,13 +181,13 @@ class AISOCLauncher:
             borderwidth=2
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
-        self.log_text.insert(tk.END, "AI-SOC Launcher initialized.\n")
+        self.log_text.insert(tk.END, "Argus Launcher initialized.\n")
         self.log_text.config(state=tk.DISABLED)
 
         # Footer
         footer = tk.Label(
             self.root,
-            text="AI-SOC v1.0 | AI-Augmented Security Operations Center",
+            text="Argus v1.0 | AI-Augmented Security Operations Center",
             bg="#34495e",
             fg="white",
             font=("Arial", 9),
@@ -268,7 +268,7 @@ class AISOCLauncher:
 
         response = messagebox.askyesno(
             "Docker Required",
-            "AI-SOC requires Docker Desktop for container orchestration.\n\n"
+            "Argus requires Docker Desktop for container orchestration.\n\n"
             "Would you like to download Docker Desktop now?\n\n"
             "Docker Desktop is freely available and requires approximately 5-10 minutes for installation."
         )
@@ -277,13 +277,13 @@ class AISOCLauncher:
             webbrowser.open("https://www.docker.com/products/docker-desktop/")
 
     def start_system(self):
-        """Start all AI-SOC services"""
+        """Start all Argus services"""
         self.is_running = True
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
         self.progress.start()
 
-        self.log("Starting AI-SOC services...")
+        self.log("Starting Argus services...")
         self.status_label.config(
             text="🔄 Starting Services...",
             fg="#3498db"
@@ -399,16 +399,16 @@ class AISOCLauncher:
         """Called when services start successfully"""
         self.progress.stop()
         self.status_label.config(
-            text="✅ AI-SOC Running",
+            text="✅ Argus Running",
             fg="#27ae60"
         )
         self.dashboard_button.config(state=tk.NORMAL)
-        self.log("✓ AI-SOC is ready!")
+        self.log("✓ Argus is ready!")
         self.log("Click 'Open Dashboard' to view the web interface")
 
         messagebox.showinfo(
             "Deployment Successful",
-            "AI-SOC platform is now operational.\n\n"
+            "Argus platform is now operational.\n\n"
             "Select 'Open Dashboard' to access the web-based monitoring interface."
         )
 
@@ -427,19 +427,19 @@ class AISOCLauncher:
         messagebox.showerror(
             "Configuration Missing",
             ".env configuration file not found.\n\n"
-            "Please ensure the .env file exists in the AI-SOC directory."
+            "Please ensure the .env file exists in the Argus directory."
         )
         self.on_start_error()
 
     def stop_system(self):
-        """Stop all AI-SOC services"""
+        """Stop all Argus services"""
         if not messagebox.askyesno(
             "Confirm Stop",
-            "Are you sure you want to stop AI-SOC?"
+            "Are you sure you want to stop Argus?"
         ):
             return
 
-        self.log("Stopping AI-SOC services...")
+        self.log("Stopping Argus services...")
         self.status_label.config(
             text="🔄 Stopping...",
             fg="#e67e22"
@@ -489,7 +489,7 @@ class AISOCLauncher:
         self.services_text.delete(1.0, tk.END)
         self.services_text.insert(tk.END, "All services stopped.\n")
         self.services_text.config(state=tk.DISABLED)
-        self.log("✓ AI-SOC stopped successfully")
+        self.log("✓ Argus stopped successfully")
 
     def open_dashboard(self):
         """Open the web dashboard"""

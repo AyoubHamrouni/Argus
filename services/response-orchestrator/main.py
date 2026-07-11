@@ -6,7 +6,7 @@ Autonomous Adaptive Defense: the closed loop that detects an incident,
 simulates what the attacker will do next, generates a defense plan,
 executes it, and verifies it worked.
 
-This is the service that gives the AI-SOC "hands" — translating
+This is the service that gives the Argus "hands" — translating
 intelligence into action.
 """
 
@@ -144,7 +144,7 @@ def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="AI-SOC Response Orchestrator",
+    title="Argus Response Orchestrator",
     description=(
         "Autonomous Adaptive Defense — the closed loop that detects threats, "
         "simulates attacker behavior, generates defense plans, executes them "

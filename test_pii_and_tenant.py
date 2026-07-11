@@ -230,7 +230,7 @@ def test_roi_metrics(feedback_url: str, api_key: str = ""):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AI_SOC verification tests")
+    parser = argparse.ArgumentParser(description="Argus verification tests")
     parser.add_argument("--triage-url", default="http://localhost:8000", help="Alert-triage service URL")
     parser.add_argument("--feedback-url", default="http://localhost:8001", help="Feedback service URL")
     parser.add_argument("--api-key", default="", help="Bearer API key (if auth enabled)")

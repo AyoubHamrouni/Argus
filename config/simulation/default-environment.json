@@ -1,5 +1,5 @@
 {
-  "name": "AI-SOC Default Environment",
+  "name": "Argus Default Environment",
   "description": "A realistic 6-host enterprise network for attack campaign simulation",
   "hosts": {
     "10.0.0.10": {

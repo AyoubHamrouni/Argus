@@ -58,11 +58,11 @@ systemctl restart wazuh-manager
 
 ### Option 2: Integratord Custom Script
 
-Create `/var/ossec/integrations/ai-soc-webhook`:
+Create `/var/ossec/integrations/argus-webhook`:
 
 ```bash
 #!/bin/bash
-# AI-SOC Webhook Integration
+# Argus Webhook Integration
 
 WEBHOOK_URL="http://wazuh-integration:8002/webhook"
 ALERT_FILE=$1
@@ -74,14 +74,14 @@ curl -X POST "$WEBHOOK_URL" \
 
 Make executable:
 ```bash
-chmod 750 /var/ossec/integrations/ai-soc-webhook
-chown root:wazuh /var/ossec/integrations/ai-soc-webhook
+chmod 750 /var/ossec/integrations/argus-webhook
+chown root:wazuh /var/ossec/integrations/argus-webhook
 ```
 
 Configure in `ossec.conf`:
 ```xml
 <integration>
-  <name>ai-soc-webhook</name>
+  <name>argus-webhook</name>
   <hook_url>http://wazuh-integration:8002/webhook</hook_url>
   <level>7</level>
   <alert_format>json</alert_format>
@@ -221,7 +221,7 @@ services:
     ports:
       - "8002:8002"
     networks:
-      - ai-soc-network
+      - argus-network
     depends_on:
       - alert-triage
       - rag-service

@@ -1,9 +1,9 @@
 """
-Pytest Configuration - AI-SOC Testing Framework
+Pytest Configuration - Argus Testing Framework
 Provides fixtures and configuration for all test suites
 
 Author: LOVELESS (Elite QA Specialist)
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """
 

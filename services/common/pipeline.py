@@ -5,8 +5,8 @@ Alert Processing Pipeline Orchestration
 End-to-end pipeline for automated security alert processing:
 Network Traffic → Detection → Triage → Case Creation → Response
 
-Author: AI-SOC Team
-Mission: OPERATION PIPELINE-INTEGRATION
+Author: Ayoub Hamrouni
+Mission: OPERATION ARGUS-PIPELINE
 """
 
 import asyncio
@@ -531,7 +531,7 @@ class AlertPipeline:
             "title": alert.get("rule", {}).get("description", "Security Alert"),
             "description": "\n".join(description_parts),
             "severity": severity_map.get(severity, 2),
-            "tags": ["automated", "ai-soc", severity],
+            "tags": ["automated", "argus", severity],
             "tlp": 2,  # TLP:AMBER
             "pap": 2,  # PAP:AMBER
             "customFields": {

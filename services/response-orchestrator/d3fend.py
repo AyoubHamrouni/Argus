@@ -11,7 +11,7 @@ organized into 7 tactical categories: Model, Harden, Detect, Isolate,
 Deceive, Evict, Restore.
 
 This module provides a curated, runtime-queryable mapping covering the
-20 attack actions in the AI-SOC simulator's action space, extended to
+20 attack actions in the Argus simulator's action space, extended to
 the broader ATT&CK techniques commonly seen in real SIEM alerts.
 """
 

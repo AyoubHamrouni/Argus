@@ -1,7 +1,7 @@
 # ============================================================================
 # Suricata IDS/IPS Configuration
 # ============================================================================
-# Production-ready configuration for AI-SOC network monitoring
+# Production-ready configuration for Argus network monitoring
 # Reference: https://suricata.readthedocs.io/en/latest/configuration/suricata-yaml.html
 
 %YAML 1.1

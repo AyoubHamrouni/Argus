@@ -389,7 +389,7 @@
     "strategic_diversity_score": 0.2
   },
   "environment": {
-    "name": "AI-SOC Default Environment",
+    "name": "Argus Default Environment",
     "hosts": {
       "10.0.0.10": {
         "ip": "10.0.0.10",

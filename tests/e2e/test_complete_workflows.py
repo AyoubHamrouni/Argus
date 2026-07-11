@@ -1,9 +1,9 @@
 """
 End-to-End Tests - Complete System Workflows
-Tests full alert-to-response workflows across the entire AI-SOC platform
+Tests full alert-to-response workflows across the entire Argus platform
 
 Author: LOVELESS
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 """
 

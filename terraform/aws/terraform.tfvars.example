@@ -8,5 +8,5 @@ db_allocated_storage = 50
 db_password         = "CHANGE_ME"
 
 tags = {
-  Project = "AI-SOC"
+  Project = "Argus"
 }

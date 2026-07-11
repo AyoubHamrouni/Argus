@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   # Force lowercase for Docker image compatibility
-  IMAGE_NAME: zhadyz/ai_soc
+  IMAGE_NAME: AyoubHamrouni/argus
 
 jobs:
   # ============================================================================
@@ -337,11 +337,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: "AI-SOC ${{ steps.version.outputs.tag }}"
+          name: "Argus ${{ steps.version.outputs.tag }}"
           draft: false
           prerelease: false
           body: |
-            ## AI-SOC Release ${{ steps.version.outputs.tag }}
+            ## Argus Release ${{ steps.version.outputs.tag }}
 
             AI-Augmented Security Operations Center - automated threat detection and response platform.
 
@@ -371,8 +371,8 @@ jobs:
             git clone https://github.com/${{ github.repository }}.git
             cd $(basename ${{ github.repository }})
             git checkout ${{ steps.version.outputs.tag }}
-            chmod +x deploy-ai-soc.sh
-            ./deploy-ai-soc.sh
+            chmod +x deploy-argus.sh
+            ./deploy-argus.sh
             ```
 
             **Quick Deploy (Windows):**
@@ -380,7 +380,7 @@ jobs:
             git clone https://github.com/${{ github.repository }}.git
             cd (Split-Path ${{ github.repository }} -Leaf)
             git checkout ${{ steps.version.outputs.tag }}
-            .\deploy-ai-soc.ps1
+            .\deploy-argus.ps1
             ```
 
             **Requirements:**

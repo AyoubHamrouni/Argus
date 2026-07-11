@@ -1,9 +1,9 @@
 """
 Load Testing - Locust Configuration
-Performance and stress testing for AI-SOC services
+Performance and stress testing for Argus services
 
 Author: LOVELESS
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 
 Usage:
@@ -228,7 +228,7 @@ class RAGServiceUser(HttpUser):
 def on_test_start(environment, **kwargs):
     """Called when load test starts"""
     print("\n" + "="*70)
-    print("🔥 LOAD TEST STARTING - AI-SOC PLATFORM")
+    print("🔥 LOAD TEST STARTING - Argus PLATFORM")
     print("="*70)
     print(f"Target: {environment.host}")
     print(f"Users: {environment.parsed_options.num_users if environment.parsed_options else 'N/A'}")

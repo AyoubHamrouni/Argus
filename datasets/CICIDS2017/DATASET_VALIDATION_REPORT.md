@@ -3,13 +3,13 @@
 **Report Generated**: October 13, 2025
 **Dataset Version**: Improved CICIDS2017 (November 2021)
 **Validation Status**: PASSED
-**Analyst**: AI-SOC Research Team
+**Analyst**: Argus Research Team
 
 ---
 
 ## Executive Summary
 
-The CICIDS2017 dataset has been successfully acquired, validated, and prepared for AI-SOC integration. The improved version from the University of New Brunswick research team provides a high-quality, cleaned dataset with corrected labels and enhanced features.
+The CICIDS2017 dataset has been successfully acquired, validated, and prepared for Argus integration. The improved version from the University of New Brunswick research team provides a high-quality, cleaned dataset with corrected labels and enhanced features.
 
 **Key Findings:**
 - Total records: 2,100,814 across 5 CSV files
@@ -18,7 +18,7 @@ The CICIDS2017 dataset has been successfully acquired, validated, and prepared f
 - Class distribution: 78.91% benign, 21.09% attacks
 - Data quality: Excellent (improved version with corrections)
 
-**Recommendation**: **APPROVED for production use in AI-SOC training pipeline**
+**Recommendation**: **APPROVED for production use in Argus training pipeline**
 
 ---
 
@@ -336,7 +336,7 @@ For imbalanced classification, track:
 
 ---
 
-## 9. Integration with AI-SOC Pipeline
+## 9. Integration with Argus Pipeline
 
 ### 9.1 Data Ingestion
 
@@ -520,7 +520,7 @@ print(f"Number of classes: {len(le.classes_)}")
 
 ### Final Assessment
 
-**VERDICT: APPROVED FOR AI-SOC INTEGRATION**
+**VERDICT: APPROVED FOR Argus INTEGRATION**
 
 The CICIDS2017 improved dataset is a high-quality, well-documented intrusion detection dataset suitable for training production-grade AI models. The dataset provides comprehensive coverage of common attack types with validated labels and cleaned data.
 
@@ -530,14 +530,14 @@ The CICIDS2017 improved dataset is a high-quality, well-documented intrusion det
 1. Training binary and multi-class intrusion detection models
 2. Benchmarking new detection algorithms
 3. Academic research and education
-4. Foundation for AI-SOC security operations
+4. Foundation for Argus security operations
 
 **Strategic Value**:
-- Accelerates AI-SOC development timeline
+- Accelerates Argus development timeline
 - Provides validated baseline for model training
 - Enables rapid prototyping and testing
 - Industry-standard benchmark for comparison
 
 ---
 
-**Report Compiled By**: AI-SOC Project
+**Report Compiled By**: Argus Project

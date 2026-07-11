@@ -5,7 +5,7 @@ AI-Augmented SOC
 Input validation, sanitization, prompt injection detection, and security headers.
 
 Author: LOVELESS (Elite Security Specialist)
-Mission: OPERATION SECURITY-FORTRESS
+Mission: OPERATION ARGUS-SECURITY
 Date: 2025-10-23 (Enhanced)
 """
 

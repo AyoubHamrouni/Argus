@@ -1,5 +1,5 @@
 locals {
-  name_prefix = "ai-soc-${var.environment}"
+  name_prefix = "argus-${var.environment}"
   is_prod     = var.environment == "prod"
 }
 

@@ -58,7 +58,7 @@ siem-down: ## Stop SIEM core
 	docker compose -f docker-compose/phase1-siem-core.yml down
 
 deploy: ## Full deployment (SIEM + AI + Monitoring)
-	./deploy-ai-soc.sh
+	./deploy-argus.sh
 
 docs: ## Build documentation
 	mkdocs build

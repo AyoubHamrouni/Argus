@@ -1,5 +1,5 @@
 # ============================================================================
-# AI-SOC Monitoring Stack
+# Argus Monitoring Stack
 # ============================================================================
 # Components:
 # - Prometheus: Metrics collection and alerting

@@ -3,7 +3,7 @@ Database - Correlation Engine Service
 AI-Augmented SOC
 
 SQLAlchemy async ORM models and engine setup for incident and alert tables.
-Shares the ai_soc PostgreSQL database with other services.
+Shares the argus PostgreSQL database with other services.
 """
 
 import logging

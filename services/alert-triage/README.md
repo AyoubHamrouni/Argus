@@ -184,10 +184,10 @@ TRIAGE_LOG_LEVEL=DEBUG
 ### Docker Build
 
 ```bash
-docker build -t ai-soc/alert-triage:latest .
+docker build -t argus/alert-triage:latest .
 docker run -p 8000:8000 \
   -e TRIAGE_OLLAMA_HOST=http://host.docker.internal:11434 \
-  ai-soc/alert-triage:latest
+  argus/alert-triage:latest
 ```
 
 ---

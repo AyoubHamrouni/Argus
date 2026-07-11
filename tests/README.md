@@ -1,4 +1,4 @@
-# AI-SOC Testing Framework
+# Argus Testing Framework
 
 **Date:** 2025-10-22
 
@@ -21,7 +21,7 @@ Comprehensive testing infrastructure for the AI-Augmented Security Operations Ce
 
 ## Overview
 
-This testing framework provides comprehensive coverage for all AI-SOC components:
+This testing framework provides comprehensive coverage for all Argus components:
 
 - **Unit Tests:** Individual component testing
 - **Integration Tests:** Service-to-service communication
@@ -508,4 +508,4 @@ bandit -r services/
 
 ---
 
-**AI-SOC Project**
+**Argus Project**

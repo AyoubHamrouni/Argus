@@ -4,8 +4,8 @@ CICIDS2017 IDS - Inference API Test Suite
 Comprehensive production readiness verification for ML inference service.
 Tests model loading, API endpoints, error handling, and performance.
 
-Author: AI-SOC Team
-Mission: OPERATION ML-BASELINE - Production Readiness
+Author: Ayoub Hamrouni
+Mission: OPERATION ARGUS-ML - Production Readiness
 Date: 2025-12-01
 """
 

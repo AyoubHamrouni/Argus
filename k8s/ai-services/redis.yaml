@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: ai-soc
+  namespace: argus
 spec:
   replicas: 1
   selector:
@@ -35,7 +35,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: ai-soc
+  namespace: argus
 spec:
   selector:
     app: redis

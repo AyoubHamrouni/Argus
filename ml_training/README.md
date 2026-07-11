@@ -212,7 +212,7 @@ The pipeline uses 77 network flow features extracted from the CICIDS2017 dataset
 
 ## Integration with Alert-Triage Service
 
-The inference API is designed to integrate with the AI-SOC alert-triage service:
+The inference API is designed to integrate with the Argus alert-triage service:
 
 ### 1. Service Configuration
 
@@ -470,8 +470,8 @@ spec:
 
 ## License
 
-This project is part of the AI-SOC system. See LICENSE file for details.
+This project is part of the Argus system. See LICENSE file for details.
 
 ## License
 
-This project is part of the AI-SOC system. See LICENSE file for details.
+This project is part of the Argus system. See LICENSE file for details.

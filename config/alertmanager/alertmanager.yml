@@ -1,5 +1,5 @@
 # ============================================================================
-# AlertManager Configuration for AI-SOC (Minimal)
+# AlertManager Configuration for Argus (Minimal)
 # ============================================================================
 # Note: Email/Slack configs commented out. Configure in production with actual values.
 
@@ -59,7 +59,7 @@ receivers:
 # Production configuration template (uncomment and configure):
 # global:
 #   smtp_smarthost: 'smtp.gmail.com:587'
-#   smtp_from: 'ai-soc@yourdomain.com'
+#   smtp_from: 'argus@yourdomain.com'
 #   smtp_auth_username: 'your-email@gmail.com'
 #   smtp_auth_password: 'your-app-password'
 #   slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'

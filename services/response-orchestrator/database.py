@@ -3,7 +3,7 @@ Database - Response Orchestrator Service
 AI-Augmented SOC
 
 SQLAlchemy async ORM models for defense plans, action executions,
-and verification results. Shares the ai_soc PostgreSQL database.
+and verification results. Shares the argus PostgreSQL database.
 """
 
 import logging

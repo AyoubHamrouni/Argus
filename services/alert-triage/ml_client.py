@@ -6,7 +6,7 @@ Handles communication with the ML Inference API for network intrusion detection.
 Extracts CICIDS2017 features from network flow data and provides honest confidence
 reporting when full flow data is not available.
 
-Author: AI-SOC Team
+Author: Ayoub Hamrouni
 """
 
 import logging

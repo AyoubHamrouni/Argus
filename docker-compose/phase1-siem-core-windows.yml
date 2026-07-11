@@ -1,4 +1,4 @@
-# AI-SOC Phase 1: Core SIEM Stack (Windows Compatible)
+# Argus Phase 1: Core SIEM Stack (Windows Compatible)
 # Production-ready deployment of Wazuh components ONLY
 # Suricata and Zeek EXCLUDED due to Windows Docker limitations (network_mode: host not supported)
 # Based on: https://github.com/wazuh/wazuh-docker (single-node configuration)

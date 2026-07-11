@@ -3,7 +3,7 @@ Browser Tests - Dashboard UI Testing with Playwright
 Cross-browser testing for Wazuh, Grafana, and TheHive dashboards
 
 Author: LOVELESS
-Mission: OPERATION TEST-FORTRESS
+Mission: OPERATION ARGUS-TEST
 Date: 2025-10-22
 
 Installation:
@@ -160,8 +160,8 @@ class TestGrafanaDashboard:
     )
     def test_grafana_metrics(self, page: Page):
         """Test Grafana displays metrics"""
-        # Navigate to AI-SOC dashboard (when created)
-        page.goto(f"{GRAFANA_URL}/d/ai-soc-overview", wait_until="networkidle")
+        # Navigate to Argus dashboard (when created)
+        page.goto(f"{GRAFANA_URL}/d/argus-overview", wait_until="networkidle")
 
         # Check for panels
         page.wait_for_selector(".panel-container", timeout=5000)
@@ -188,7 +188,7 @@ class TestGrafanaDashboard:
     )
     def test_grafana_screenshot(self, page: Page):
         """Capture screenshot of Grafana dashboard"""
-        page.goto(f"{GRAFANA_URL}/d/ai-soc-overview", wait_until="networkidle")
+        page.goto(f"{GRAFANA_URL}/d/argus-overview", wait_until="networkidle")
 
         page.screenshot(path="tests/browser/screenshots/grafana-dashboard.png", full_page=True)
         print("\n📸 Grafana screenshot captured")

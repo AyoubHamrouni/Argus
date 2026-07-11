@@ -1,5 +1,5 @@
 # ============================================================================
-# AI-SOC SSL Certificate Generation Script (PowerShell)
+# Argus SSL Certificate Generation Script (PowerShell)
 # ============================================================================
 # Generates self-signed certificates for Wazuh components
 # Windows-compatible version using PowerShell and OpenSSL
@@ -16,7 +16,7 @@ function Write-Info { Write-Host $args -ForegroundColor Yellow }
 function Write-Error { Write-Host $args -ForegroundColor Red }
 
 Write-Success "================================"
-Write-Success "AI-SOC Certificate Generator"
+Write-Success "Argus Certificate Generator"
 Write-Success "================================"
 
 # Get script directory
@@ -29,7 +29,7 @@ $DaysValid = 3650  # 10 years
 $Country = "US"
 $State = "California"
 $City = "Los_Angeles"
-$Org = "AI-SOC"
+$Org = "Argus"
 $OU = "Security_Operations"
 
 Write-Info "[INFO] Project directory: $ProjectDir"
@@ -58,7 +58,7 @@ if (-not (Test-Path "$RootCADir\root-ca-key.pem")) {
     openssl genrsa -out "$RootCADir\root-ca-key.pem" 4096
     openssl req -new -x509 -days $DaysValid -key "$RootCADir\root-ca-key.pem" `
         -out "$RootCADir\root-ca.pem" `
-        -subj "/C=$Country/ST=$State/L=$City/O=$Org/OU=$OU/CN=AI-SOC_Root_CA"
+        -subj "/C=$Country/ST=$State/L=$City/O=$Org/OU=$OU/CN=Argus_Root_CA"
     Write-Success "[OK] Root CA generated"
 } else {
     Write-Info "[SKIP] Root CA already exists"

@@ -240,7 +240,7 @@ jobs:
           if [ -f "services/${{ matrix.service }}/Dockerfile" ]; then
             echo "Building ${{ matrix.service }} Docker image..."
             cd services/${{ matrix.service }}
-            docker build -t ai-soc/${{ matrix.service }}:test .
+            docker build -t argus/${{ matrix.service }}:test .
           else
             echo "Dockerfile not found for ${{ matrix.service }}"
             exit 1
@@ -248,7 +248,7 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm ai-soc/${{ matrix.service }}:test python -c "print('ok')"
+          docker run --rm argus/${{ matrix.service }}:test python -c "print('ok')"
 
   # ============================================================================
   # Dependency Security Scan
@@ -287,7 +287,7 @@ jobs:
     steps:
       - name: Generate test summary
         run: |
-          echo "# AI-SOC Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# Argus Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

@@ -4,7 +4,7 @@
 
 | Method | Best For | SIEM Support |
 |--------|----------|--------------|
-| Deploy script (`deploy-ai-soc.sh`) | Quick start, full stack | Full (Linux) |
+| Deploy script (`deploy-argus.sh`) | Quick start, full stack | Full (Linux) |
 | Docker Compose (manual) | Custom configurations | Full (Linux), partial (macOS/Windows) |
 | Kubernetes | AI services in production | SIEM runs outside cluster |
 | Terraform | Cloud infrastructure | Provisioned separately |
@@ -12,10 +12,10 @@
 ## One-Command Deployment
 
 ```bash
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
 cp .env.example .env   # Edit with your values
-./deploy-ai-soc.sh
+./deploy-argus.sh
 ```
 
 The script deploys three stacks in order:
@@ -42,13 +42,13 @@ AI services can be deployed to Kubernetes using the manifests in `k8s/ai-service
 kubectl apply -k k8s/ai-services/
 
 # Check status
-kubectl get pods -n ai-soc
-kubectl get svc -n ai-soc
+kubectl get pods -n argus
+kubectl get svc -n argus
 ```
 
 **Resources included:**
 
-- Namespace `ai-soc`
+- Namespace `argus`
 - ConfigMap and Secret templates
 - Deployments with health checks and resource limits
 - Services (ClusterIP) for internal communication
@@ -96,7 +96,7 @@ Key variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `POSTGRES_HOST` | `postgres` | PostgreSQL host |
-| `POSTGRES_PASSWORD` | `ai_soc_password` | PostgreSQL password (change in production) |
+| `POSTGRES_PASSWORD` | `argus_password` | PostgreSQL password (change in production) |
 | `JWT_SECRET_KEY` | — | Secret for JWT token signing (required) |
 | `REDIS_URL` | `redis://redis:6379/0` | Redis connection URL |
 | `OLLAMA_MODEL` | `llama3.2:3b` | Ollama model for LLM inference |

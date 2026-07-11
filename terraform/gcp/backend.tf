@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "ai-soc-terraform-state"
+    bucket = "argus-terraform-state"
     prefix = "gcp"
   }
 }

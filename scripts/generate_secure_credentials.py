@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate Secure Credentials for AI-SOC Production Deployment
+Generate Secure Credentials for Argus Production Deployment
 Replaces all default passwords with cryptographically strong credentials
 
 Author: LOVELESS (Elite Security Specialist)
-Mission: OPERATION SECURITY-FORTRESS
+Mission: OPERATION ARGUS-SECURITY
 Date: 2025-10-23
 """
 
@@ -45,7 +45,7 @@ def generate_jwt_secret():
 def generate_all_credentials():
     """Generate all production credentials."""
     print("=" * 80)
-    print("AI-SOC PRODUCTION CREDENTIALS GENERATOR")
+    print("Argus PRODUCTION CREDENTIALS GENERATOR")
     print("=" * 80)
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
@@ -177,7 +177,7 @@ def write_env_file(credentials, output_path=".env.production"):
 
     with open(output_file, "w") as f:
         f.write("# ============================================================================\n")
-        f.write("# AI-SOC PRODUCTION CREDENTIALS\n")
+        f.write("# Argus PRODUCTION CREDENTIALS\n")
         f.write("# ============================================================================\n")
         f.write(f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("# \n")

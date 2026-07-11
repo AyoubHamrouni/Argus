@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ai-soc-config
-  namespace: ai-soc
+  name: argus-config
+  namespace: argus
 data:
   ENVIRONMENT: "production"
   LOG_LEVEL: "INFO"
   POSTGRES_HOST: "postgres"
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: "ai_soc"
+  POSTGRES_DB: "argus"
   REDIS_URL: "redis://redis:6379/0"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
   LITELLM_MODEL: "gpt-4o-mini"

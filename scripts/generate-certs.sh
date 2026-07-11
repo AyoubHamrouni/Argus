@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# AI-SOC SSL Certificate Generation Script
+# Argus SSL Certificate Generation Script
 # ============================================================================
 # Generates self-signed certificates for Wazuh components
 # Based on: https://documentation.wazuh.com/current/deployment-options/docker/certificates.html
@@ -18,7 +18,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}================================${NC}"
-echo -e "${GREEN}AI-SOC Certificate Generator${NC}"
+echo -e "${GREEN}Argus Certificate Generator${NC}"
 echo -e "${GREEN}================================${NC}"
 
 # Get script directory
@@ -31,7 +31,7 @@ DAYS_VALID=3650  # 10 years
 COUNTRY="US"
 STATE="California"
 CITY="Los Angeles"
-ORG="AI-SOC"
+ORG="Argus"
 OU="Security Operations"
 
 echo -e "${YELLOW}[INFO]${NC} Project directory: $PROJECT_DIR"
@@ -50,7 +50,7 @@ if [ ! -f "$ROOT_CA_DIR/root-ca-key.pem" ]; then
     openssl genrsa -out "$ROOT_CA_DIR/root-ca-key.pem" 4096
     openssl req -new -x509 -days $DAYS_VALID -key "$ROOT_CA_DIR/root-ca-key.pem" \
         -out "$ROOT_CA_DIR/root-ca.pem" \
-        -subj "/C=$COUNTRY/ST=$STATE/L=$CITY/O=$ORG/OU=$OU/CN=AI-SOC Root CA"
+        -subj "/C=$COUNTRY/ST=$STATE/L=$CITY/O=$ORG/OU=$OU/CN=Argus Root CA"
     echo -e "${GREEN}[OK]${NC} Root CA generated"
 else
     echo -e "${YELLOW}[SKIP]${NC} Root CA already exists"

@@ -1,8 +1,8 @@
 """
-AI-SOC Command Center — Dashboard Backend
+Argus Command Center — Dashboard Backend
 ==========================================
 Flask proxy server that forwards requests from the frontend to the
-individual AI-SOC microservices.  The browser only ever talks to
+individual Argus microservices.  The browser only ever talks to
 port 5050 (this process), eliminating all CORS friction.
 
 Run with: python dashboard/app.py
@@ -512,7 +512,7 @@ def rag_collections():
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     print("=" * 60)
-    print("AI-SOC Command Center starting…")
+    print("Argus Command Center starting…")
     print("Access at: http://localhost:5050")
     print("Press Ctrl+C to stop")
     print("=" * 60)

@@ -1,6 +1,6 @@
 # CICIDS2017 ML Inference Service - Docker Compose Configuration
 # Mission: OPERATION ML-BASELINE
-# Agent: AI-SOC Team
+# Agent: Ayoub Hamrouni
 #
 # Usage:
 #   docker-compose -f docker-compose.inference.yml up -d
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
     networks:
-      - ai_soc
+      - argus
 
     # Resource limits (adjust based on your infrastructure)
     deploy:
@@ -52,6 +52,6 @@ services:
           memory: 256M
 
 networks:
-  ai_soc:
+  argus:
     driver: bridge
-    name: ai_soc_network
+    name: argus_network

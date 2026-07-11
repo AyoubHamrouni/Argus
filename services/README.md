@@ -237,10 +237,10 @@ docker compose -f docker-compose/ai-services.yml down
 
 ```bash
 # Linux/macOS
-./deploy-ai-soc.sh
+./deploy-argus.sh
 
 # Windows
-.\deploy-ai-soc.ps1
+.\deploy-argus.ps1
 ```
 
 ---
@@ -257,11 +257,11 @@ docker compose -f docker-compose/ai-services.yml down
 
 ```bash
 # Clone repository
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
 
 # Run the deploy script (starts everything)
-./deploy-ai-soc.sh
+./deploy-argus.sh
 
 # Or manually start just the AI services
 docker compose -f docker-compose/ai-services.yml up -d
@@ -382,4 +382,4 @@ docker compose up -d chromadb
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for development setup and contribution guidelines.
 
-**GitHub:** https://github.com/zhadyz/AI_SOC
+**GitHub:** https://github.com/AyoubHamrouni/Argus

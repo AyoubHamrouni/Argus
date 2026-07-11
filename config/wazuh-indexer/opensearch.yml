@@ -6,7 +6,7 @@
 
 network.host: "0.0.0.0"
 node.name: "wazuh-indexer"
-cluster.name: "ai-soc-cluster"
+cluster.name: "argus-cluster"
 node.max_local_storage_nodes: "1"
 
 # Discovery settings for single-node
@@ -34,11 +34,11 @@ plugins.security.restapi.roles_enabled: ["all_access", "security_rest_api_access
 
 # Admin DN (adjust if needed)
 plugins.security.authcz.admin_dn:
-  - "CN=admin,OU=Security,O=AI-SOC,L=Los Angeles,ST=California,C=US"
+  - "CN=admin,OU=Security,O=Argus,L=Los Angeles,ST=California,C=US"
 
 # Node certificates DN
 plugins.security.nodes_dn:
-  - "CN=wazuh-indexer,OU=Security,O=AI-SOC,L=Los Angeles,ST=California,C=US"
+  - "CN=wazuh-indexer,OU=Security,O=Argus,L=Los Angeles,ST=California,C=US"
 
 # Performance tuning
 indices.query.bool.max_clause_count: 100000

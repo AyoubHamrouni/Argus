@@ -432,7 +432,7 @@ datasets/CICIDS2017/
 
 **Note**: These are general benchmarks. Your results will vary based on preprocessing and model configuration.
 
-## Integration with AI-SOC Pipeline
+## Integration with Argus Pipeline
 
 ### 1. Training Phase
 - Use this dataset to train intrusion detection models
@@ -477,4 +477,4 @@ The dataset is provided for academic and research purposes. Please respect the o
 
 ---
 
-**Dataset prepared for the AI-SOC Project**
+**Dataset prepared for the Argus Project**

@@ -4,8 +4,8 @@ CICIDS2017 ML Inference Service - Deployment Verification Script
 Comprehensive deployment verification including Docker build, container health,
 API functionality, and performance benchmarks.
 
-Author: AI-SOC Team
-Mission: OPERATION ML-BASELINE
+Author: Ayoub Hamrouni
+Mission: OPERATION ARGUS-ML
 Date: 2025-12-01
 """
 
@@ -396,8 +396,8 @@ def main():
     print("\n" + "="*80)
     print("ML INFERENCE SERVICE - DEPLOYMENT VERIFICATION")
     print("="*80)
-    print("\nMission: OPERATION ML-BASELINE")
-    print("Agent: AI-SOC Team")
+    print("\nMission: OPERATION ARGUS-ML")
+    print("Agent: Ayoub Hamrouni")
     print("Date: 2025-12-01")
 
     verifier = DeploymentVerifier()

@@ -8,8 +8,8 @@ Integration: Alert-Triage Service Architecture
 Endpoint: POST /predict
 Target Latency: <100ms per prediction
 
-Author: AI-SOC Team
-Mission: OPERATION ML-BASELINE
+Author: Ayoub Hamrouni
+Mission: OPERATION ARGUS-ML
 Date: 2025-10-13
 """
 

@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket         = "ai-soc-terraform-state"
+    bucket         = "argus-terraform-state"
     key            = "aws/terraform.tfstate"
     region         = "us-west-2"
     encrypt        = true

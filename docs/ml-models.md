@@ -2,7 +2,7 @@
 
 ## Overview
 
-AI-SOC uses trained machine learning models for network intrusion detection on the CICIDS2017 dataset. The models perform binary classification (BENIGN vs ATTACK) on network flow data using 77 extracted features.
+Argus uses trained machine learning models for network intrusion detection on the CICIDS2017 dataset. The models perform binary classification (BENIGN vs ATTACK) on network flow data using 77 extracted features.
 
 ## Model Performance
 

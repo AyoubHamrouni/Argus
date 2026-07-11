@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# AI-SOC QUICKSTART - Get Running in <5 Minutes
+# Argus QUICKSTART - Get Running in <5 Minutes
 # ============================================================================
 # Minimal deployment for immediate "hello world" experience
 # Deploys: Core SIEM + AI Services only
@@ -42,7 +42,7 @@ ENV_FILE="$SCRIPT_DIR/.env"
 echo -e "${CYAN}"
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                                                              ║"
-echo "║              AI-SOC QUICKSTART                               ║"
+echo "║              Argus QUICKSTART                               ║"
 echo "║              Get Running in < 5 Minutes                      ║"
 echo "║                                                              ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
@@ -77,7 +77,7 @@ echo -e "\n${BLUE}[2/5]${NC} Setting up minimal environment..."
 if [ ! -f "$ENV_FILE" ]; then
     # Create minimal .env with defaults
     cat > "$ENV_FILE" << 'EOF'
-# AI-SOC Quickstart Environment
+# Argus Quickstart Environment
 # Auto-generated for quick deployment
 
 # Wazuh credentials (change after deployment)
@@ -432,7 +432,7 @@ if [ "$VALIDATION_STATUS" = "PASSED" ]; then
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 
-    echo -e "${WHITE}Access Your AI-SOC:${NC}"
+    echo -e "${WHITE}Access Your Argus:${NC}"
     echo ""
     echo -e "  ${GREEN}Wazuh Dashboard:${NC}    https://localhost:443"
     echo -e "    Username: admin"
@@ -504,7 +504,7 @@ fi
 # Save quickstart info
 mkdir -p "$SCRIPT_DIR/logs"
 cat > "$SCRIPT_DIR/logs/quickstart_info.txt" << EOF
-AI-SOC Quickstart Deployment
+Argus Quickstart Deployment
 Timestamp: $(date)
 Validation Status: $VALIDATION_STATUS
 

@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability within AI-SOC, please report it through [GitHub Security Advisories](https://github.com/zhadyz/AI_SOC/security/advisories/new). All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability within Argus, please report it through [GitHub Security Advisories](https://github.com/AyoubHamrouni/Argus/security/advisories/new). All security vulnerabilities will be promptly addressed.
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
@@ -48,7 +48,7 @@ The following are in scope for security reports:
 
 ## Security Best Practices
 
-When deploying AI-SOC, follow these security guidelines:
+When deploying Argus, follow these security guidelines:
 
 1. **Never commit secrets** - Use environment variables and the `.env.example` template
 2. **Enable authentication** - Set `API_KEY_ENABLED=true` in production
@@ -61,7 +61,7 @@ When deploying AI-SOC, follow these security guidelines:
 
 ## Security Features
 
-AI-SOC includes several built-in security features:
+Argus includes several built-in security features:
 
 - **Input validation** on all API endpoints (`services/common/security.py`)
 - **Prompt injection detection** for LLM inputs
@@ -75,4 +75,4 @@ AI-SOC includes several built-in security features:
 
 ## Acknowledgments
 
-We thank security researchers who responsibly disclose vulnerabilities. Your efforts help make AI-SOC safer for everyone.
+We thank security researchers who responsibly disclose vulnerabilities. Your efforts help make Argus safer for everyone.

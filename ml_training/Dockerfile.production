@@ -1,6 +1,6 @@
 # CICIDS2017 ML Inference Service - Production Dockerfile
-# Mission: OPERATION ML-BASELINE
-# Agent: HOLLOWED_EYES
+# Mission: ARGUS ML-BASELINE
+# Agent: Ayoub Hamrouni
 # Features: Multi-stage build, security hardening, model baking option
 
 # Build stage
@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 FROM python:3.11-slim
 
 # Metadata
-LABEL maintainer="HOLLOWED_EYES <z@onyxlab.ai>"
+LABEL maintainer="Ayoub Hamrouni"
 LABEL description="CICIDS2017 ML Inference Service - Production Grade"
 LABEL version="1.0.0"
 

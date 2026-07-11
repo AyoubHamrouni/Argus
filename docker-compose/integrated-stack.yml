@@ -1,10 +1,10 @@
 version: '3.8'
 
 # ============================================================================
-# AI-SOC Integrated Stack
+# Argus Integrated Stack
 # ============================================================================
 #
-# Complete, production-ready AI-SOC deployment with full integration:
+# Complete, production-ready Argus deployment with full integration:
 # - API Gateway (unified entry point)
 # - ML Inference (IDS prediction)
 # - Alert Triage (LLM analysis)
@@ -14,7 +14,7 @@ version: '3.8'
 # - ChromaDB (vector database)
 # - Ollama (LLM inference)
 #
-# Author: AI-SOC Team
+# Author: Ayoub Hamrouni
 # Mission: OPERATION PIPELINE-INTEGRATION
 # ============================================================================
 
@@ -26,7 +26,7 @@ services:
     build:
       context: ../services/gateway
       dockerfile: Dockerfile
-    container_name: ai-soc-gateway
+    container_name: argus-gateway
     hostname: api-gateway
     restart: unless-stopped
     ports:
@@ -309,7 +309,7 @@ networks:
       config:
         - subnet: 172.30.0.0/24
     labels:
-      - "com.ai-soc.network=ai-services"
+      - "com.argus.network=ai-services"
 
   siem-frontend:
     external: true
@@ -329,17 +329,17 @@ volumes:
   chromadb-data:
     driver: local
     labels:
-      - "com.ai-soc.volume=chromadb"
+      - "com.argus.volume=chromadb"
 
   ollama-models:
     driver: local
     labels:
-      - "com.ai-soc.volume=ollama"
+      - "com.argus.volume=ollama"
 
   redis-data:
     driver: local
     labels:
-      - "com.ai-soc.volume=redis"
+      - "com.argus.volume=redis"
 
 # ============================================================================
 # Deployment Instructions

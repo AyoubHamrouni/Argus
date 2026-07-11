@@ -20,8 +20,8 @@
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/zhadyz/AI_SOC.git
-cd AI_SOC
+git clone https://github.com/AyoubHamrouni/Argus.git
+cd Argus
 cp .env.example .env
 ```
 
@@ -40,14 +40,14 @@ OPENAI_API_KEY=<your-ollama-or-api-key>
 Linux/macOS:
 
 ```bash
-chmod +x deploy-ai-soc.sh
-./deploy-ai-soc.sh
+chmod +x deploy-argus.sh
+./deploy-argus.sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-.\deploy-ai-soc.ps1
+.\deploy-argus.ps1
 ```
 
 The script runs three phases:
@@ -91,7 +91,7 @@ docker compose -f docker-compose/phase1-siem-core-windows.yml up -d
 ## Stopping the Stack
 
 ```bash
-./deploy-ai-soc.sh --stop
+./deploy-argus.sh --stop
 ```
 
 Or manually:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Download pre-trained model artifacts for AI-SOC ML Inference API.
+# Download pre-trained model artifacts for Argus ML Inference API.
 # These files are excluded from the git repository via .gitignore.
 #
 # Usage:
@@ -10,8 +10,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${SCRIPT_DIR}"
-REPO="zhadyz/AI_SOC"
-RELEASE_TAG="${AI_SOC_MODEL_TAG:-latest}"
+REPO="AyoubHamrouni/Argus"
+RELEASE_TAG="${ARGUS_MODEL_TAG:-latest}"
 
 MODELS=(
     "random_forest_ids.pkl"
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: $0 [--dir <directory>] [--tag <release-tag>]"
             echo ""
-            echo "Download pre-trained ML model artifacts for AI-SOC."
+            echo "Download pre-trained ML model artifacts for Argus."
             echo ""
             echo "Options:"
             echo "  --dir <path>    Target directory (default: models/)"
@@ -52,7 +52,7 @@ done
 
 mkdir -p "$TARGET_DIR"
 
-echo "Downloading AI-SOC model artifacts..."
+echo "Downloading Argus model artifacts..."
 echo "  Repository: $REPO"
 echo "  Release: $RELEASE_TAG"
 echo "  Target: $TARGET_DIR"

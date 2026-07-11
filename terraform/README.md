@@ -1,6 +1,6 @@
-# AI-SOC Terraform Infrastructure
+# Argus Terraform Infrastructure
 
-Multi-cloud Terraform modules for deploying the AI-SOC platform across AWS, Azure, and GCP.
+Multi-cloud Terraform modules for deploying the Argus platform across AWS, Azure, and GCP.
 
 ## Structure
 
